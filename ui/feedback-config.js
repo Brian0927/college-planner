@@ -24,14 +24,14 @@
 
 export const FEEDBACK = {
   /** https://docs.google.com/forms/d/e/【這一段】/viewform */
-  formId: '1FAIpQLSfcV193p0U8Lf5U-xl7DFpCwZn--Rrgj9sBCrb_WPJESWk7eg',
+  formId: '1FAIpQLScwyDP6pteIQwhGczc1UL4fMTmk0NDApq0ORvrBZEMWjZvKuQ',
 
-  /** 對應「courseplannerV3 問題回報」表單的四題 */
+  /** 對應「學程規劃表｜問題回報（Brian）」表單的四題 */
   fields: {
-    message: 'entry.1171730888',      // 問題描述（詳答）
-    email: 'entry.806623100',         // 聯絡 email（簡答）
-    diagnostics: 'entry.740239293',   // 診斷資訊（詳答）
-    plan: 'entry.148761236',          // 完整規劃（詳答）
+    message: 'entry.233999372',      // 問題描述（詳答）
+    email: 'entry.939203122',         // 聯絡 email（簡答）
+    diagnostics: 'entry.634502974',   // 診斷資訊（詳答）
+    plan: 'entry.120706740',          // 完整規劃（詳答）
   },
 
   /** 送不出去時顯示給使用者的備援信箱；留空就只提示「複製內容」 */
