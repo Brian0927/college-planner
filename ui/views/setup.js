@@ -29,10 +29,12 @@ export function renderSetup() {
     </fieldset>
 
     <fieldset class="pick-group">
-      <legend>額外身分（可複選）</legend>
+      <legend>輔系（最多選一個）</legend>
+      <label class="pick-row"><input type="radio" name="minorPick" value="" ${!plan.identityIds.length && !plan.customIdentities.some(c => c.type === 'minor') ? 'checked' : ''}><span class="nm">不修輔系</span></label>
       ${IDENTITIES.map((m) => identityRow(m, plan.identityIds.includes(m.id))).join('')}
-      ${plan.customIdentities.map((c) => customRow(c)).join('')}
+      ${plan.customIdentities.filter(c => c.type === 'minor').map((c) => customRow(c)).join('')}
     </fieldset>
+    ${plan.customIdentities.some(c => c.type !== 'minor') ? `<fieldset class="pick-group"><legend>其他身分</legend>${plan.customIdentities.filter(c => c.type !== 'minor').map(c => customRow(c)).join('')}</fieldset>` : ''}
 
     ${
       dataWarnings.length
@@ -73,7 +75,7 @@ export function renderSetup() {
     <details class="footnote"><summary>115 學年度資料來源與適用規定</summary>
       <p>主修依指定的 114 入學科目表；輔系依 115 學年度系網現行規定。原修訂日期保留，未改稱 115 新制。</p>
       ${store.modules.filter(m => m.source).map(m => `<p>${esc(m.label)}：${esc(m.source)} ${m.sourceUrl ? `<a href="${esc(m.sourceUrl)}" target="_blank" rel="noopener noreferrer">官方來源</a>` : ''}</p>`).join('')}
-      <p><a href="https://curricul.site.nthu.edu.tw/p/406-1208-111356,r7883.php?Lang=zh-tw" target="_blank" rel="noopener noreferrer">115 上學分課程來源</a> · <a href="https://language.site.nthu.edu.tw/p/412-1212-22960.php?Lang=zh-tw" target="_blank" rel="noopener noreferrer">115 學年度非學分語言課</a></p>
+      <p><a href="https://curricul.site.nthu.edu.tw/p/406-1208-111356,r7883.php?Lang=zh-tw" target="_blank" rel="noopener noreferrer">115 上學分課程來源</a></p>
       <p>開課時段依 115 上官方快照。115 下僅列已確認的課程階段；正式開課以學校公告為準。</p>
     </details>
   `;
@@ -97,7 +99,7 @@ function majorRow(m, checked) {
 function identityRow(m, checked) {
   return `
     <label class="pick-row">
-      <input type="checkbox" data-identity="${esc(m.id)}" ${checked ? 'checked' : ''}>
+      <input type="radio" name="minorPick" value="${esc(m.id)}" data-identity="${esc(m.id)}" ${checked ? 'checked' : ''}>
       <span class="nm">${esc(typeLabel(m.type))}　${esc(m.label)}</span>
       <span class="mono cr">＋${num(m.totalCredits)}</span>
     </label>`;
@@ -106,7 +108,7 @@ function identityRow(m, checked) {
 function customRow(c) {
   return `
     <label class="pick-row">
-      <input type="checkbox" data-identity="${esc(c.id)}" checked>
+      <input type="${c.type === 'minor' ? 'radio' : 'checkbox'}" ${c.type === 'minor' ? 'name="minorPick"' : ''} value="${esc(c.id)}" data-identity="${esc(c.id)}" checked>
       <span class="nm">${esc(typeLabel(c.type))}　${esc(c.label)}</span>
       <span class="mono cr">＋${num(c.credits)}</span>
     </label>`;
@@ -169,6 +171,10 @@ function bindEvents() {
   setup.addEventListener('change', (e) => {
     const t = e.target;
     if (t.name === 'majorPick') return store.setMajor(t.value);
+    if (t.name === 'minorPick') {
+      store.selectMinor(t.value);
+      return toast(t.value ? '已切換輔系；原有課程保留，舊輔系課程改列主修選修' : '已取消輔系；課程保留');
+    }
     if (t.dataset.option) return store.setOption(t.dataset.option, t.value);
 
     if (t.dataset.identity) {

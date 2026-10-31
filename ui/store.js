@@ -121,7 +121,18 @@ function migrate(data) {
   delete out.studentName;
   delete out.studentId;
   if (out.majorId !== DEFAULT_MAJOR_ID) { out.majorId = DEFAULT_MAJOR_ID; out.options = {}; }
-  out.identityIds = out.identityIds.filter(id => getModule(id)?.type === 'minor');
+  const validIds = out.identityIds.filter(id => getModule(id)?.type === 'minor');
+  out.identityIds = validIds.slice(0, 1);
+  let hasMinor = out.identityIds.length > 0;
+  const removed = validIds.slice(1).map(getModule);
+  out.customIdentities = out.customIdentities.filter(c => {
+    if (c.type !== 'minor') return true;
+    if (!hasMinor) { hasMinor = true; return true; }
+    removed.push(customModule(c));
+    return false;
+  });
+  const removedTags = new Set(removed.flatMap(m => m.tags.map(t => t.id)));
+  out.courses.forEach(c => { if (removedTags.has(c.tag)) c.tag = 'tag.major-elective'; });
   delete out.options.minor;
   delete out.rulesetId;
   return out;
@@ -282,15 +293,27 @@ export const store = {
     commit();
   },
   addIdentity(id) {
+    if (getModule(id)?.type !== 'minor') return false;
     if (plan.identityIds.includes(id)) return false;
-    plan.identityIds.push(id);
+    this.selectMinor(id);
+    return true;
+  },
+  /** 輔系最多一個；切換後保留課程，舊輔系標籤轉為主修選修。 */
+  selectMinor(id) {
+    const builtin = getModule(id)?.type === 'minor';
+    const custom = plan.customIdentities.some(c => c.id === id && c.type === 'minor');
+    if (id && !builtin && !custom) return false;
+    plan.identityIds = builtin ? [id] : [];
+    plan.customIdentities = plan.customIdentities.filter(c => c.type !== 'minor' || c.id === id);
+    retagOrphans();
     commit();
     return true;
   },
   addCustomIdentity({ type, label, credits }) {
     const id = 'custom.' + Date.now().toString(36);
     plan.customIdentities.push({ id, type, label, credits: Number(credits) || 0 });
-    commit();
+    if (type === 'minor') this.selectMinor(id);
+    else commit();
     return id;
   },
   /** 移除身分：回傳會被連帶改標籤的課程數，讓 UI 先問過使用者 */

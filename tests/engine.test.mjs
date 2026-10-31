@@ -430,6 +430,7 @@ test('引擎是純函式：不會改到傳進去的 plan 或 ruleset', () => {
 test('全部修滿時判定畢業達標', () => {
   const courses = [];
   const add = (n, cr, tag) => courses.push(course(n, cr, tag));
+  add('自行規劃英文領域學分', 8, 'tag.english');
 
   ruleset.subjectGroups
     .find((g) => g.id === 'grp.school')

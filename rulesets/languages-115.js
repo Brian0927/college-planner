@@ -1,4 +1,3 @@
-// 清大官方 115-1 開放課程資料；擷取 2026-10-31，不含登入資訊。
 export default [
   {
     "id": "language.0",
@@ -147,88 +146,6 @@ export default [
         "credit": 3,
         "tag": "tag.major-elective",
         "note": "115 科目表；實際開課以校務系統公告為準"
-      }
-    ]
-  },
-  {
-    "id": "language.extension",
-    "label": "日語、德語、粵語非學分課（115 學年度第 55 期）",
-    "rule": {
-      "type": "optional"
-    },
-    "note": "推廣班均為 0 學分，不計畢業；粵語僅此一門零基礎班，官方未列中高級，不自行增設程度。",
-    "items": [
-      {
-        "name": "初級日語 Level 1（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "初級日語 Level 2（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名；另有一班停開"
-      },
-      {
-        "name": "中級日語 Level 1（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "中級日語 Level 2（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "中級日語 Level 3（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "中級日語 Level 4（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；本期停開，僅供參考"
-      },
-      {
-        "name": "中高級日語 Level 1（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "高級日語專題班（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "初級德語 Level 1（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；本期停開，僅供參考"
-      },
-      {
-        "name": "初級德語 Level 2（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "中級德語 Level 4（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；非學分進修，須另行報名"
-      },
-      {
-        "name": "多媒體學粵語——電影、電視劇、MV、新聞（非學分班）",
-        "credit": 0,
-        "tag": "tag.major-elective",
-        "note": "115 學年度第 55 期；本期停開，僅供參考"
       }
     ]
   }

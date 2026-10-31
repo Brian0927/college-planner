@@ -1,4 +1,3 @@
-// 114 入學主修，官方科目表核對於 2026-10-31。
 export default {
   "id": "major.dongji-114",
   "type": "major",
@@ -248,30 +247,6 @@ export default {
           "name": "大學中文",
           "credit": 2,
           "tag": "tag.chinese"
-        },
-        {
-          "name": "英文一",
-          "credit": 2,
-          "tag": "tag.english",
-          "note": "英文領域規劃佔位；實際課名依分級選課。114 入學英檢免修僅限核定的選讀英文 2 學分。"
-        },
-        {
-          "name": "英文二",
-          "credit": 2,
-          "tag": "tag.english",
-          "note": "英文領域規劃佔位；實際課名依分級選課。114 入學英檢免修僅限核定的選讀英文 2 學分。"
-        },
-        {
-          "name": "英文三",
-          "credit": 2,
-          "tag": "tag.english",
-          "note": "英文領域規劃佔位；實際課名依分級選課。114 入學英檢免修僅限核定的選讀英文 2 學分。"
-        },
-        {
-          "name": "英文四",
-          "credit": 2,
-          "tag": "tag.english",
-          "note": "英文領域規劃佔位；實際課名依分級選課。114 入學英檢免修僅限核定的選讀英文 2 學分。"
         }
       ]
     },

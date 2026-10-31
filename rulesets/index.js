@@ -22,7 +22,7 @@ import minorEE from './minor.ee.js';
 /** 主修：一次只能選一個（畫面上是單選） */
 export const MAJORS = [majorDongji114];
 
-/** 額外身分：可以複選（畫面上是勾選） */
+/** 輔系候選清單：UI 與 store 限制最多選一個。 */
 export const IDENTITIES = [minorFl, minorQf, minorMse, minorEE];
 
 export const ALL_MODULES = [...MAJORS, ...IDENTITIES];

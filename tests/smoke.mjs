@@ -142,8 +142,9 @@ check('匯入後畫面與資料一致', window.document.querySelectorAll('.sem-b
 console.log('\n【取消勾選 → 學分要求跟著降】');
 const qfCourses = store.identityCourseCount('minor.qf');
 const qfBox2 = window.document.querySelector('input[data-identity="minor.qf"]');
-qfBox2.checked = false;
-qfBox2.dispatchEvent(new window.Event('change', { bubbles: true }));
+const noMinor = [...window.document.querySelectorAll('input[name=minorPick]')].find(el => el.value === '');
+noMinor.checked = true;
+noMinor.dispatchEvent(new window.Event('change', { bubbles: true }));
 check('應修學分回到 129', text('#ledgerTotal') === '129', text('#ledgerTotal'));
 check('原輔系課程變成未設標籤（課沒被刪）',
   store.plan.courses.filter((c) => c.tag === 'tag.major-elective').length >= qfCourses);
