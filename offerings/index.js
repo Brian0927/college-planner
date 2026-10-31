@@ -19,12 +19,13 @@
 import pme1142 from './114-2/PME.js';
 import qf1142 from './114-2/QF.js';
 import ge1142 from './114-2/GE.js';
+import lang1151 from './115-1/LANG.js';
 import pme1151 from './115-1/PME.js';
 import qf1151 from './115-1/QF.js';
 import ge1151 from './115-1/GE.js';
 
 /** 所有開課資料，一個元素 = 一個學期的一個系所（通識課程總錄當成系所 GE） */
-export const OFFERINGS = [pme1142, qf1142, ge1142, pme1151, qf1151, ge1151];
+export const OFFERINGS = [pme1142, qf1142, ge1142, pme1151, qf1151, ge1151, lang1151];
 
 /** 依學期（例 '115-1'）與系所代碼（例 'PME'）取得開課資料，找不到回傳 null */
 export function getOffering(semester, dept) {

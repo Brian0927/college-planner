@@ -14,17 +14,16 @@
 
 // 新增科系時，在這裡多一行 import
 import majorDongji114 from './major.dongji-114.js';
-import majorDongji113 from './major.dongji-113.js';
-import majorEE114 from './major.ee-114.js';
-import majorCTM111 from './major.ctm-111.js';
 import minorQf from './minor.qf.js';
+import minorFl from './minor.fl.js';
+import minorMse from './minor.mse.js';
 import minorEE from './minor.ee.js';
 
 /** 主修：一次只能選一個（畫面上是單選） */
-export const MAJORS = [majorDongji114, majorDongji113, majorEE114, majorCTM111];
+export const MAJORS = [majorDongji114];
 
 /** 額外身分：可以複選（畫面上是勾選） */
-export const IDENTITIES = [minorQf, minorEE];
+export const IDENTITIES = [minorFl, minorQf, minorMse, minorEE];
 
 export const ALL_MODULES = [...MAJORS, ...IDENTITIES];
 

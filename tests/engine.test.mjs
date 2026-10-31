@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { evaluate, tagTable, validateRuleset, mergeModules } from '../engine/index.js';
-import major from '../rulesets/major.dongji-113.js';
+import major from '../rulesets/major.dongji-114.js';
 import minorQf from '../rulesets/minor.qf.js';
 
 /** 只有主修的規則集（129 學分） */
@@ -338,10 +338,10 @@ test('沒有標籤的課會被單獨列出來提醒', () => {
 test('科目判定：排到就打勾', () => {
   const r = evaluate(plan([course('微積分一', 3, 'tag.dept')]), ruleset);
   const dept = r.subject.groups.find((g) => g.id === 'grp.dept');
-  const item = dept.items.find((i) => i.name === '微積分一');
+  const item = dept.items.find((i) => i.name === '微積分B一');
   assert.equal(item.checked, true);
   assert.equal(item.semester, 'y1s1');
-  assert.equal(dept.items.find((i) => i.name === '微積分二').checked, false);
+  assert.equal(dept.items.find((i) => i.name === '微積分B二').checked, false);
   assert.equal(dept.satisfied, false);
 });
 
@@ -381,7 +381,7 @@ test('課名比對忽略空白', () => {
   const r = evaluate(plan([course('微 積 分 一', 3, 'tag.dept')]), ruleset);
   const item = r.subject.groups
     .find((g) => g.id === 'grp.dept')
-    .items.find((i) => i.name === '微積分一');
+    .items.find((i) => i.name === '微積分B一');
   assert.equal(item.checked, true);
 });
 
@@ -389,7 +389,7 @@ test('標籤跟規則建議不同時會標記出來', () => {
   const r = evaluate(plan([course('微積分一', 3, 'tag.major-elective')]), ruleset);
   const item = r.subject.groups
     .find((g) => g.id === 'grp.dept')
-    .items.find((i) => i.name === '微積分一');
+    .items.find((i) => i.name === '微積分B一');
   assert.equal(item.checked, true);
   assert.equal(item.tagMismatch, true);
 });

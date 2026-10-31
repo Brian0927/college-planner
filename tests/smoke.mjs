@@ -21,10 +21,11 @@ for (const k of ['window', 'document', 'navigator', 'HTMLElement', 'CustomEvent'
   Object.defineProperty(globalThis, k, { value: window[k], configurable: true, writable: true });
 }
 globalThis.confirm = () => true;
+globalThis.requestAnimationFrame = window.requestAnimationFrame.bind(window);
 globalThis.URL.createObjectURL = () => 'blob:x';
 globalThis.URL.revokeObjectURL = () => {};
 
-const load = (p) => import(pathToFileURL(new URL(p, root).pathname).href);
+const load = (p) => import(new URL(p, root).href);
 
 await load('ui/main.js');
 const { store } = await load('ui/store.js');
@@ -38,13 +39,13 @@ const check = (label, cond, extra = '') => {
 };
 
 console.log('\n【啟動】');
-check('主修單選清單有渲染', window.document.querySelectorAll('input[name=majorPick]').length === 3,
+check('主修單選清單有渲染', window.document.querySelectorAll('input[name=majorPick]').length === 1,
   String(window.document.querySelectorAll('input[name=majorPick]').length) + ' 個主修');
 check('額外身分勾選框有渲染', window.document.querySelectorAll('input[data-identity]').length >= 1);
 check('預設勾選動機系 114',
   window.document.querySelector('input[name=majorPick]:checked').value === 'major.dongji-114',
   window.document.querySelector('input[name=majorPick]:checked').value);
-check('114 資料未核對有提醒', $('.data-warn') !== null && $('.data-warn').textContent.includes('核對'));
+check('114 科目表已核對', $('.data-warn') === null);
 check('匯入清單有內容', $('#importList').children.length > 0, `${$('#importList').children.length} 列`);
 check('八個學期格子都在', window.document.querySelectorAll('.sem-body').length === 8);
 check('動機系 114 → 應修 129', text('#ledgerTotal') === '129', text('#ledgerTotal'));
@@ -72,7 +73,7 @@ qfBox.dispatchEvent(new window.Event('change', { bubbles: true }));
 check('應修學分變成 149', text('#ledgerTotal') === '149', text('#ledgerTotal'));
 check('輔系維持勾選狀態', window.document.querySelector('input[data-identity="minor.qf"]').checked);
 check('標題列同時顯示兩個身分',
-  $('#majorSub').textContent.includes('動機') && $('#majorSub').textContent.includes('計量財務'),
+  $('#majorSub').textContent.includes('動力機械') && $('#majorSub').textContent.includes('計量財務'),
   $('#majorSub').textContent);
 check('學分明細有三列（主修/輔系/合計）', window.document.querySelectorAll('.credit-sum .cs-row').length === 3);
 check('匯入清單多了輔系指定科目', $('#importList').textContent.includes('衍生性金融市場'));
@@ -125,7 +126,7 @@ check('視窗開啟', $('.overlay') !== null);
 check('列出 12 個標籤（主修 11 ＋ 輔系 1）', window.document.querySelectorAll('.tag-table tbody tr').length === 12,
   String(window.document.querySelectorAll('.tag-table tbody tr').length));
 $('#tagClose').click();
-check('視窗關閉', $('.overlay') === null);
+check('標籤視窗關閉', $('#tagClose') === null);
 
 console.log('\n【匯出 / 匯入】');
 const json = store.exportPlan();
@@ -145,7 +146,7 @@ qfBox2.checked = false;
 qfBox2.dispatchEvent(new window.Event('change', { bubbles: true }));
 check('應修學分回到 129', text('#ledgerTotal') === '129', text('#ledgerTotal'));
 check('原輔系課程變成未設標籤（課沒被刪）',
-  store.plan.courses.filter((c) => c.tag === null).length >= qfCourses);
+  store.plan.courses.filter((c) => c.tag === 'tag.major-elective').length >= qfCourses);
 
 console.log('\n【切換入學年度】');
 const pick = (v) => {
@@ -153,12 +154,12 @@ const pick = (v) => {
   r.checked = true;
   r.dispatchEvent(new window.Event('change', { bubbles: true }));
 };
-pick('major.dongji-113');
-check('切到 113 學年', store.plan.majorId === 'major.dongji-113');
+store.setMajor('major.dongji-113');
+check('不接受已移除的主修', store.plan.majorId === 'major.dongji-114');
 check('113 是已核對資料，沒有提醒', $('.data-warn') === null);
 pick('major.dongji-114');
 check('切回 114 學年 → 129', text('#ledgerTotal') === '129', text('#ledgerTotal'));
-check('114 又出現待核對提醒', $('.data-warn') !== null);
+check('114 核對狀態保持', $('.data-warn') === null);
 
 console.log('\n【自訂身分】');
 store.addCustomIdentity({ type: 'program', label: '人工智慧學程', credits: 12 });

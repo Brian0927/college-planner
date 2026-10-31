@@ -7,7 +7,7 @@
  */
 
 /** 版本標記：畫面右下角會顯示，用來確認瀏覽器跑的是不是最新檔案 */
-export const BUILD = 'v25';
+export const BUILD = 'v26';
 
 import { evaluate } from '../engine/index.js';
 import { store } from './store.js';
@@ -19,7 +19,6 @@ import { renderWeek } from './views/week.js';
 import { renderReport } from './views/report.js';
 import { openTagEditor } from './views/tags.js';
 import { openHelp, maybeAutoShowHelp } from './views/help.js';
-import { openFeedback } from './views/feedback.js';
 
 function renderAll() {
   const report = evaluate(store.plan, store.ruleset);
@@ -46,7 +45,6 @@ function renderHeader(report) {
   const t = report.credit.total;
 
   const parts = [];
-  if (plan.meta.studentName) parts.push(plan.meta.studentName);
   parts.push(ruleset.label);
   (ruleset.options || []).forEach((opt) => {
     const v = plan.options[opt.id];
@@ -134,7 +132,6 @@ on('#persistToggle', 'change', (e) => {
 });
 on('#tagEditorBtn', 'click', openTagEditor);
 on('#helpBtn', 'click', openHelp);
-on('#feedbackBtn', 'click', openFeedback);
 on('#resetBtn', 'click', () => {
   if (confirm('會清空所有課程與設定，且無法復原。建議先匯出備份。確定清空？')) {
     store.reset();

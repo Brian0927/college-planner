@@ -53,7 +53,6 @@ function emptyPlan() {
     majorId: DEFAULT_MAJOR_ID,
     identityIds: [],        // 內建身分模組，例：['minor.qf']
     customIdentities: [],   // 自訂身分：{ id, type, label, credits }
-    meta: { studentName: '' },
     options: {},
     courses: [],
     lockedSemesters: [],    // 已鎖定、不接受編輯的學期 id，例：['y1s1']
@@ -62,6 +61,7 @@ function emptyPlan() {
 }
 
 let plan = load();
+if (persist) save();
 let uid = plan.courses.reduce((m, c) => Math.max(m, Number(String(c.id).slice(1)) || 0), 0);
 const listeners = new Set();
 
@@ -86,9 +86,8 @@ function migrate(data) {
   const base = emptyPlan();
   const out = {
     ...base,
-    ...data,
+    majorId: data.majorId || base.majorId,
     version: PLAN_VERSION,
-    meta: { ...base.meta, ...(data.meta || {}) },
     options: { ...(data.options || {}) },
     identityIds: [...(data.identityIds || [])],
     customIdentities: [...(data.customIdentities || [])],
@@ -117,6 +116,12 @@ function migrate(data) {
       if (c.tag === 'tag.minor') c.tag = 'tag.minor-qf';
     });
   }
+  // 舊匯入檔與本機資料一律移除個人欄位。
+  delete out.meta;
+  delete out.studentName;
+  delete out.studentId;
+  if (out.majorId !== DEFAULT_MAJOR_ID) { out.majorId = DEFAULT_MAJOR_ID; out.options = {}; }
+  out.identityIds = out.identityIds.filter(id => getModule(id)?.type === 'minor');
   delete out.options.minor;
   delete out.rulesetId;
   return out;
@@ -263,7 +268,7 @@ export const store = {
 
   /* 身分別 */
   setMajor(id) {
-    if (id === plan.majorId) return;
+    if (id !== DEFAULT_MAJOR_ID || id === plan.majorId) return;
     plan.majorId = id;
     plan.options = {};
     // 入學年不同，同一個「大二上」就對到不同學年度，選過的班可能不存在了。
@@ -303,10 +308,6 @@ export const store = {
 
   setOption(key, value) {
     plan.options[key] = value;
-    commit();
-  },
-  setMeta(key, value) {
-    plan.meta[key] = value;
     commit();
   },
 

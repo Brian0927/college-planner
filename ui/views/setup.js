@@ -1,5 +1,5 @@
 /**
- * ui/views/setup.js — 身分別設定 ＋ 規定科目匯入
+ * ui/views/setup.js — 身分別設定 ＋ 規定科目與語言選修匯入
  *
  * 畢業學分要求由身分別相加而來：主修動機系 129 ＋ 輔系計財 20 ＝ 149。
  * 匯入清單直接從合併後的規則集長出來，每門課自動帶上規則建議的標籤。
@@ -8,6 +8,7 @@
 import { store } from '../store.js';
 import { $, esc, num, toast, delegate } from '../dom.js';
 import { MAJORS, IDENTITIES } from '../../rulesets/index.js';
+import languageGroups from '../../rulesets/languages-115.js';
 import { isActive, typeLabel } from '../../engine/index.js';
 
 let bound = false;
@@ -23,7 +24,7 @@ export function renderSetup() {
 
   $('#setupBox').innerHTML = `
     <fieldset class="pick-group">
-      <legend>主修（擇一）</legend>
+      <legend>主修（114 學年入學）</legend>
       ${MAJORS.map((m) => majorRow(m, m.id === plan.majorId)).join('')}
     </fieldset>
 
@@ -51,8 +52,6 @@ export function renderSetup() {
       <div class="cs-row total"><span>畢業應修學分</span><span class="mono">${num(ruleset.totalCredits)}</span></div>
     </div>
 
-    <label for="studentName">姓名／學號（選填）</label>
-    <input type="text" id="studentName" value="${esc(plan.meta.studentName)}" placeholder="只存在這台裝置">
 
     ${(ruleset.options || [])
       .map(
@@ -71,7 +70,12 @@ export function renderSetup() {
       )
       .join('')}
 
-    ${major && major.source ? `<p class="footnote">依 ${esc(major.source)}</p>` : ''}
+    <details class="footnote"><summary>115 學年度資料來源與適用規定</summary>
+      <p>主修依指定的 114 入學科目表；輔系依 115 學年度系網現行規定。原修訂日期保留，未改稱 115 新制。</p>
+      ${store.modules.filter(m => m.source).map(m => `<p>${esc(m.label)}：${esc(m.source)} ${m.sourceUrl ? `<a href="${esc(m.sourceUrl)}" target="_blank" rel="noopener noreferrer">官方來源</a>` : ''}</p>`).join('')}
+      <p><a href="https://curricul.site.nthu.edu.tw/p/406-1208-111356,r7883.php?Lang=zh-tw" target="_blank" rel="noopener noreferrer">115 上學分課程來源</a> · <a href="https://language.site.nthu.edu.tw/p/412-1212-22960.php?Lang=zh-tw" target="_blank" rel="noopener noreferrer">115 學年度非學分語言課</a></p>
+      <p>開課時段依 115 上官方快照。115 下僅列已確認的課程階段；正式開課以學校公告為準。</p>
+    </details>
   `;
 
   renderImportPanel();
@@ -111,7 +115,7 @@ function customRow(c) {
 /* ── 規定科目匯入 ─────────────────────────── */
 function renderImportPanel() {
   const { plan, ruleset } = store;
-  const groups = (ruleset.subjectGroups || []).filter((g) => isActive(g, plan.options));
+  const groups = [...(ruleset.subjectGroups || []).filter((g) => isActive(g, plan.options)), ...languageGroups];
   const rows = groups.map((g) => renderGroup(g, plan.options)).filter(Boolean).join('');
 
   $('#importBox').innerHTML = `
@@ -135,6 +139,7 @@ function renderGroup(group, options, depth = 0) {
     10 + depth * 10
   }px;position:sticky;top:0">${esc(group.label)}</div>`;
 
+  const note = group.note ? `<p class="footnote" style="padding:4px 10px">${esc(group.note)}</p>` : '';
   const body = items
     .map((item) => {
       const exists = store.hasCourse(item.name);
@@ -153,7 +158,7 @@ function renderGroup(group, options, depth = 0) {
     })
     .join('');
 
-  return head + body + children.map((g) => renderGroup(g, options, depth + 1)).join('');
+  return head + note + body + children.map((g) => renderGroup(g, options, depth + 1)).join('');
 }
 
 /* ── 事件 ─────────────────────────────────── */
@@ -182,9 +187,6 @@ function bindEvents() {
       store.removeIdentity(id);
       toast('已移除身分');
     }
-  });
-  setup.addEventListener('input', (e) => {
-    if (e.target.id === 'studentName') store.setMeta('studentName', e.target.value);
   });
 
   const box = $('#importBox');

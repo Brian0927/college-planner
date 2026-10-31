@@ -199,7 +199,8 @@ test('換主修：新主修沒有的標籤改成其餘選修，共有的標籤�
   const zh = tagged('大學中文', 'tag.chinese');
   const none = tagged('沒標籤的課', null);
   store.setMajor('major.ee-114');
-  assert.equal(find(elec.id).tag, 'tag.elective');
+  assert.equal(store.plan.majorId, 'major.dongji-114');
+  assert.equal(find(elec.id).tag, 'tag.major-elective');
   assert.equal(find(zh.id).tag, 'tag.chinese');
   assert.equal(find(none.id).tag, null);
 });
