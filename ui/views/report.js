@@ -130,7 +130,7 @@ function creditHTML(c) {
   const t = c.total;
   const banner = t.met
     ? `<div class="notice pass"><b>學分判定通過。</b>認列 ${num(t.earned)} 學分，達畢業門檻 ${num(t.target)}。</div>`
-    : `<div class="notice">距畢業門檻還差 <b>${num(t.remaining)}</b> 學分。目前認列 ${num(t.earned)}／${num(t.target)}${
+    : `<div class="notice">${t.remaining === 0 ? '總學分已足，但仍有類別或必修門數未達標。' : `距畢業門檻還差 <b>${num(t.remaining)}</b> 學分。`}目前認列 ${num(t.earned)}／${num(t.target)}${
         t.overCounted > 0
           ? `，另有 ${num(t.overCounted)} 學分實際修了但因項目額滿或未啟用而未認列`
           : ''
@@ -189,6 +189,7 @@ function bucketHTML(b) {
       <span class="bar"><span class="${pct >= 1 ? 'full' : ''}" style="width:${pct * 100}%"></span></span>
       <span class="bk-num">${num(b.earned)} / ${b.target == null ? '—' : num(b.target)}</span>
     </div>
+    ${b.replacement ? `<div class="check-line${b.replacement.completed ? '' : ' bad'}" data-english-replacement>${b.replacement.completed ? '✓ 英文學分已透過外語修完（依排課判定）' : '○ 外語替代英文尚未完成：需初級德語一、二各 3 學分'}<span class="bk-note">須確認兩門課均及格；大四畢業審查表英文欄旁註記「以其它外語方案修課」，以便系辦及註冊組審查。</span></div>` : ''}
     ${checks}${detail}`;
 }
 

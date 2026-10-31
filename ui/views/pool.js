@@ -329,7 +329,10 @@ function bindEvents() {
     if (e.key === 'Enter' && (e.target.id === 'courseName' || e.target.id === 'courseCredit')) addCourse();
   });
   $('#addCourseBox').addEventListener('change', (e) => {
-    if (e.target.id === 'courseGroup') renderPool(); // 換類別 → 重畫第二層
+    if (e.target.id === 'courseGroup') {
+      if (e.target.value === 'bkt.pe') $('#courseCredit').value = '0';
+      renderPool(); // 換類別 → 重畫第二層
+    }
   });
 
   $('#searchCourse').addEventListener('input', (e) => {

@@ -26,10 +26,14 @@
 import { applyTagEdits, buildIndex, validateRuleset } from './ruleset.js';
 import { evaluateSubjects } from './subject.js';
 import { evaluateCredits } from './credit.js';
+import { resolvePlanRules } from './plan-rules.js';
 
 export function evaluate(plan, baseRuleset) {
-  const ruleset = applyTagEdits(baseRuleset, plan.tagEdits || {});
-  const issues = validateRuleset(ruleset);
+  const base = applyTagEdits(baseRuleset, plan.tagEdits || {});
+  const issues = validateRuleset(base);
+  const resolved = resolvePlanRules(plan, base);
+  const ruleset = resolved.ruleset;
+  plan = resolved.plan;
   const index = buildIndex(ruleset, plan.options || {});
 
   return {

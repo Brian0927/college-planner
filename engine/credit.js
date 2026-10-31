@@ -12,7 +12,7 @@
  * 不會把一門課的學分拆成兩半分給兩個領域。
  */
 
-import { isActive, isCounted, toNumber } from './ruleset.js';
+import { isActive, isCounted, toNumber, normalizeName } from './ruleset.js';
 
 const MAX_PASSES = 8; // 溢出鏈的保險絲，避免規則寫成循環時無限迴圈
 
@@ -34,7 +34,7 @@ export function evaluateCredits(plan, ruleset, index) {
     byName.get(key).push(c);
   });
   const duplicates = [...byName.values()]
-    .filter((list) => list.length > 1)
+    .filter((list) => list.length > 1 && !list.every(c => ['tag.pe','tag.pe-first'].includes(c.tag)))
     .map((list) => ({
       name: list[0].name,
       count: list.length,
@@ -48,7 +48,7 @@ export function evaluateCredits(plan, ruleset, index) {
     allocationsOf.set(c.id, []);
     const credit = toNumber(c.credit);
     // 0 學分課（體育、操行、學習護照）只走科目判定，沒有標籤也不必提醒
-    if (credit <= 0) return;
+    if (credit <= 0 && !['tag.pe','tag.pe-first'].includes(c.tag)) return;
     if (!c.tag) return untagged.push(c);
     const bucketId = index.bucketOfTag.get(c.tag);
     if (!bucketId) return unmapped.push(c);
@@ -122,6 +122,10 @@ export function evaluateCredits(plan, ruleset, index) {
       const target = b.minCredits == null ? null : toNumber(b.minCredits);
       const rows = takenBy.get(b.id) || [];
       const checks = runBucketChecks(b, rows, courses);
+      const replacement = b.replacement ? {
+        label: b.replacement.label,
+        completed: b.replacement.groups.every(names => rows.some(r => r.counted >= 3 && names.some(n => normalizeName(n) === normalizeName(r.name)))) && got >= 6,
+      } : null;
 
       return {
         id: b.id,
@@ -134,9 +138,10 @@ export function evaluateCredits(plan, ruleset, index) {
         cap: b.cap == null ? null : toNumber(b.cap),
         overflowTo: b.overflowTo || null,
         remaining: target == null ? 0 : round2(Math.max(0, target - got)),
-        met: !meta.active || (target == null ? true : got >= target) && checks.every((k) => k.ok),
+        met: !meta.active || ((target == null ? true : got >= target) && checks.every((k) => k.ok) && (!replacement || replacement.completed)),
         checks,
         courses: rows,
+        replacement,
       };
     });
 
@@ -174,7 +179,7 @@ export function evaluateCredits(plan, ruleset, index) {
       earned: totalEarned,          // 認列學分（受上限限制）
       target: totalTarget,          // 畢業總學分
       remaining: round2(Math.max(0, totalTarget - totalEarned)),
-      met: totalEarned >= totalTarget && countedCategories.every((c) => c.met),
+      met: totalEarned >= totalTarget && categories.filter(c => c.active).every(c => c.met),
       actualCredits,                // 實修學分（不受上限限制）
       overCounted: round2(Math.max(0, actualCredits - totalEarned)),
     },

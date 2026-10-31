@@ -123,7 +123,7 @@ console.log('\n【標籤設定視窗】');
 const { openTagEditor } = await load('ui/views/tags.js');
 openTagEditor();
 check('視窗開啟', $('.overlay') !== null);
-check('列出 12 個標籤（主修 11 ＋ 輔系 1）', window.document.querySelectorAll('.tag-table tbody tr').length === 12,
+check('列出 14 個標籤（主修 13 ＋ 輔系 1）', window.document.querySelectorAll('.tag-table tbody tr').length === 14,
   String(window.document.querySelectorAll('.tag-table tbody tr').length));
 $('#tagClose').click();
 check('標籤視窗關閉', $('#tagClose') === null);

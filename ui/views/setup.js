@@ -77,6 +77,7 @@ export function renderSetup() {
       ${store.modules.filter(m => m.source).map(m => `<p>${esc(m.label)}：${esc(m.source)} ${m.sourceUrl ? `<a href="${esc(m.sourceUrl)}" target="_blank" rel="noopener noreferrer">官方來源</a>` : ''}</p>`).join('')}
       <p><a href="https://curricul.site.nthu.edu.tw/p/406-1208-111356,r7883.php?Lang=zh-tw" target="_blank" rel="noopener noreferrer">115 上學分課程來源</a></p>
       <p>開課時段依 115 上官方快照。115 下僅列已確認的課程階段；正式開課以學校公告為準。</p>
+      <p><a href="https://nthu-english.site.nthu.edu.tw/p/412-1532-22771.php" target="_blank" rel="noopener noreferrer">115 英文修課規則</a> · <a href="https://nthu-english.site.nthu.edu.tw/p/412-1532-22095.php" target="_blank" rel="noopener noreferrer">114 入學適用英文規則</a> · <a href="https://cge.site.nthu.edu.tw/p/404-1573-246341.php" target="_blank" rel="noopener noreferrer">通識要求</a> · <a href="https://curricul.site.nthu.edu.tw/p/404-1208-11159.php?Lang=zh-tw" target="_blank" rel="noopener noreferrer">體育要求</a></p>
     </details>
   `;
 

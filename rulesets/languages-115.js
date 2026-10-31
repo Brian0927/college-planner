@@ -86,8 +86,8 @@ export default [
       {
         "name": "初級德語一",
         "credit": 3,
-        "tag": "tag.major-elective",
-        "note": "115-1 官方課程總錄"
+        "tag": "tag.english",
+        "note": "115-1 官方課程總錄；進階生第二外語方案使用：列入英文領域，不重複計其他選修"
       },
       {
         "name": "中級德語一",
@@ -138,8 +138,8 @@ export default [
       {
         "name": "初級德語二",
         "credit": 3,
-        "tag": "tag.major-elective",
-        "note": "115 科目表；實際開課以校務系統公告為準"
+        "tag": "tag.english",
+        "note": "115 科目表；實際開課以校務系統公告為準；進階生第二外語方案使用：列入英文領域，不重複計其他選修"
       },
       {
         "name": "中級德語二",

@@ -26,9 +26,9 @@ test('規則集本身沒有結構錯誤', () => {
   assert.deepEqual(issues.filter((i) => i.level === 'error'), []);
 });
 
-test('主修的 11 個標籤全部有對應到項目與大類', () => {
+test('主修的 13 個標籤全部有對應到項目與大類', () => {
   const table = tagTable(plan([]), ruleset);
-  assert.equal(table.length, 11); // 含核心通識向度一～四
+  assert.equal(table.length, 13); // 含核心通識向度一～四與體育
   table.forEach((t) => {
     assert.ok(t.bucketId, `${t.label} 沒有對應項目`);
     assert.ok(t.categoryId, `${t.label} 沒有對應大類`);
@@ -253,18 +253,13 @@ test('核心通識四個向度：各修一門就達標', () => {
   assert.equal(ge.met, true);
 });
 
-test('核心通識學分跨四個向度合計', () => {
-  const r = evaluate(
-    plan([
-      course('向度一課程', 3, 'tag.ge-core-1'),
-      course('向度二課程', 3, 'tag.ge-core-2'),
-      course('向度三課程', 2, 'tag.ge-core-3'),
-    ]),
-    ruleset
-  );
-  const core = findBucket(r, 'bkt.ge').checks.find((k) => k.label.includes('至少 8 學分'));
-  assert.equal(core.have, 8, '三個向度的學分要加總，不是各算各的');
-  assert.equal(core.ok, true);
+test('通識只檢查四向度及合計20學分，不限制核心與一般各自學分', () => {
+  const courses=[1,2,3,4].map(i=>course('核心'+i,1,'tag.ge-core-'+i));
+  courses.push(course('一般通識',16,'tag.ge-general'));
+  const ge=findBucket(evaluate(plan(courses),ruleset),'bkt.ge');
+  assert.equal(ge.checks.length,1);
+  assert.equal(ge.met,true);
+  assert.equal(ge.earned,20);
 });
 
 test('身分別決定畢業學分：主修 129', () => {
@@ -280,8 +275,8 @@ test('身分別決定畢業學分：主修 129 ＋ 輔系 20 ＝ 149', () => {
 });
 
 test('加了輔系才有輔系標籤與項目', () => {
-  assert.equal(tagTable(plan([]), ruleset).length, 11);
-  assert.equal(tagTable(plan([]), withMinor).length, 12);
+  assert.equal(tagTable(plan([]), ruleset).length, 13);
+  assert.equal(tagTable(plan([]), withMinor).length, 14);
   assert.ok(!ruleset.categories.some((c) => c.id === 'cat.identity'));
   assert.ok(withMinor.categories.some((c) => c.id === 'cat.identity'));
 });
@@ -431,6 +426,8 @@ test('全部修滿時判定畢業達標', () => {
   const courses = [];
   const add = (n, cr, tag) => courses.push(course(n, cr, tag));
   add('自行規劃英文領域學分', 8, 'tag.english');
+  add('大一體育',0,'tag.pe-first');
+  for(let i=0;i<5;i++) add('體育'+i,0,'tag.pe');
 
   ruleset.subjectGroups
     .find((g) => g.id === 'grp.school')

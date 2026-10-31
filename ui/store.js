@@ -19,6 +19,7 @@
 
 import { DEFAULT_MAJOR_ID, getModule } from '../rulesets/index.js';
 import { OFFERINGS } from '../offerings/index.js';
+import { normalizePlanCourse } from '../engine/plan-rules.js';
 import { mergeModules, customModule, applyTagEdits, termOf, findSection, sectionCandidates, cleanSlots, customSection, termHint, parsePrereq, checkPrereq, prereqTextFor } from '../engine/index.js';
 
 const STORAGE_KEY = 'credit-planner/plan/v2';
@@ -53,7 +54,7 @@ function emptyPlan() {
     majorId: DEFAULT_MAJOR_ID,
     identityIds: [],        // 內建身分模組，例：['minor.qf']
     customIdentities: [],   // 自訂身分：{ id, type, label, credits }
-    options: {},
+    options: { englishRoute: 'advanced-german' },
     courses: [],
     lockedSemesters: [],    // 已鎖定、不接受編輯的學期 id，例：['y1s1']
     tagEdits: { tags: {}, moves: {}, custom: [] },
@@ -88,7 +89,7 @@ function migrate(data) {
     ...base,
     majorId: data.majorId || base.majorId,
     version: PLAN_VERSION,
-    options: { ...(data.options || {}) },
+    options: { ...base.options, ...(data.options || {}) },
     identityIds: [...(data.identityIds || [])],
     customIdentities: [...(data.customIdentities || [])],
     // 舊版規劃檔沒有 section（選的班）與 customSlots（自訂時段），讀進來就是都還沒設。
@@ -120,7 +121,7 @@ function migrate(data) {
   delete out.meta;
   delete out.studentName;
   delete out.studentId;
-  if (out.majorId !== DEFAULT_MAJOR_ID) { out.majorId = DEFAULT_MAJOR_ID; out.options = {}; }
+  if (out.majorId !== DEFAULT_MAJOR_ID) { out.majorId = DEFAULT_MAJOR_ID; out.options = { ...base.options }; }
   const validIds = out.identityIds.filter(id => getModule(id)?.type === 'minor');
   out.identityIds = validIds.slice(0, 1);
   let hasMinor = out.identityIds.length > 0;
@@ -135,6 +136,7 @@ function migrate(data) {
   out.courses.forEach(c => { if (removedTags.has(c.tag)) c.tag = 'tag.major-elective'; });
   delete out.options.minor;
   delete out.rulesetId;
+  out.courses.forEach(c => normalizePlanCourse(c, out.options));
   return out;
 }
 
@@ -148,6 +150,7 @@ function save() {
 }
 
 function commit() {
+  plan.courses.forEach(c => normalizePlanCourse(c, plan.options));
   save();
   listeners.forEach((fn) => fn(plan));
 }

@@ -55,7 +55,7 @@ const chipSel = $('#poolContainer .tag-pick');
 ck('卡片下拉存在', chipSel !== null);
 ck('通識收在 optgroup 底下', chipSel.querySelector('optgroup[label*="通識"]') !== null);
 ck('單一標籤的項目沒有多包一層 optgroup',
-   [...chipSel.querySelectorAll('optgroup')].length === 1,
+   [...chipSel.querySelectorAll('optgroup')].length === 2,
    `${[...chipSel.querySelectorAll('optgroup')].length} 組`);
 
 console.log(pass ? '\n全部通過\n' : '\n有項目失敗\n');

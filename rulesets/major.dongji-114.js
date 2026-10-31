@@ -34,6 +34,20 @@ export default {
           "label": "精密機械與智慧製造學程"
         }
       ]
+    },
+    {
+      "id": "englishRoute",
+      "label": "英文領域修課方案",
+      "choices": [
+        {
+          "value": "advanced-german",
+          "label": "進階生：初級德語一、二（6 學分）"
+        },
+        {
+          "value": "standard",
+          "label": "一般英文領域（8 學分）"
+        }
+      ]
     }
   ],
   "tags": [
@@ -91,6 +105,16 @@ export default {
       "id": "tag.major-elective",
       "label": "主修選修",
       "color": "#B08D3F"
+    },
+    {
+      "id": "tag.pe-first",
+      "label": "大一體育",
+      "color": "#39785a"
+    },
+    {
+      "id": "tag.pe",
+      "label": "興趣體育",
+      "color": "#528d69"
     }
   ],
   "categories": [
@@ -119,7 +143,7 @@ export default {
         },
         {
           "id": "bkt.ge",
-          "label": "通識",
+          "label": "通識合計",
           "tags": [
             "tag.ge-core-1",
             "tag.ge-core-2",
@@ -128,7 +152,7 @@ export default {
             "tag.ge-general"
           ],
           "minCredits": 20,
-          "note": "核心通識 8–12 學分＋一般通識 8–12 學分",
+          "note": "核心四向度各至少一門；核心與一般通識合計至少 20 學分，兩者不另設各自最低學分。",
           "checks": [
             {
               "type": "minDistinctTags",
@@ -140,23 +164,6 @@ export default {
               ],
               "min": 4,
               "label": "四個核心向度各至少 1 門"
-            },
-            {
-              "type": "minCreditsOfTag",
-              "tags": [
-                "tag.ge-core-1",
-                "tag.ge-core-2",
-                "tag.ge-core-3",
-                "tag.ge-core-4"
-              ],
-              "min": 8,
-              "label": "核心通識至少 8 學分"
-            },
-            {
-              "type": "minCreditsOfTag",
-              "tag": "tag.ge-general",
-              "min": 8,
-              "label": "一般通識至少 8 學分"
             }
           ]
         }
@@ -231,6 +238,38 @@ export default {
             "tag.major-elective"
           ],
           "minCredits": 20
+        }
+      ]
+    },
+    {
+      "id": "cat.pe",
+      "label": "體育",
+      "color": "#39785a",
+      "minCredits": 0,
+      "countsTowardTotal": false,
+      "buckets": [
+        {
+          "id": "bkt.pe",
+          "label": "體育",
+          "tags": [
+            "tag.pe-first",
+            "tag.pe"
+          ],
+          "minCredits": 0,
+          "note": "畢業前須修滿大一體育 1 門及興趣體育 5 門，共 6 門；0 學分，不計入畢業總學分。同一興趣項目可跨學期重修。",
+          "checks": [
+            {
+              "type": "minCourses",
+              "min": 6,
+              "label": "體育至少 6 門"
+            },
+            {
+              "type": "minCoursesOfTag",
+              "tag": "tag.pe-first",
+              "min": 1,
+              "label": "含大一體育至少 1 門"
+            }
+          ]
         }
       ]
     }
@@ -1018,14 +1057,31 @@ export default {
       },
       "items": [
         {
-          "name": "體育",
-          "credit": 0,
-          "note": "一～三年級必修"
-        },
-        {
           "name": "操行",
           "credit": 0,
           "note": "每學期成績及格"
+        }
+      ]
+    },
+    {
+      "id": "grp.pe",
+      "label": "體育課程（0 學分）",
+      "rule": {
+        "type": "optional"
+      },
+      "note": "請加入 1 門大一體育與 5 門興趣體育；完成情形於學分判定的體育類別顯示。",
+      "items": [
+        {
+          "name": "大一體育",
+          "credit": 0,
+          "tag": "tag.pe-first",
+          "note": "必修 1 門"
+        },
+        {
+          "name": "體育（興趣選項）",
+          "credit": 0,
+          "tag": "tag.pe",
+          "note": "必修 5 門；可自行新增實際項目課名"
         }
       ]
     }
