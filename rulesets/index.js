@@ -34,7 +34,7 @@ export function getModule(id) {
   return ALL_MODULES.find((m) => m.id === id) || null;
 }
 
-/** 四年八學期，UI 的課表格子。 */
+/** 課表學期，含選用的大五學期。 */
 export const SEMESTERS = [
   { id: 'y1s1', year: '大一', term: '上' },
   { id: 'y1s2', year: '大一', term: '下' },
@@ -44,4 +44,12 @@ export const SEMESTERS = [
   { id: 'y3s2', year: '大三', term: '下' },
   { id: 'y4s1', year: '大四', term: '上' },
   { id: 'y4s2', year: '大四', term: '下' },
+  { id: 'y5s1', year: '大五', term: '上' },
+  { id: 'y5s2', year: '大五', term: '下' },
+];
+
+export const FIFTH_YEAR_TERMS = [
+  { value: 'both', label: '大五上、下學期' },
+  { value: 'upper', label: '僅大五上學期' },
+  { value: 'lower', label: '僅大五下學期' },
 ];

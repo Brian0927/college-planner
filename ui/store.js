@@ -17,7 +17,7 @@
  * 開關狀態本身也記在 localStorage，所以打開過一次就會一直保持。
  */
 
-import { DEFAULT_MAJOR_ID, getModule } from '../rulesets/index.js';
+import { DEFAULT_MAJOR_ID, FIFTH_YEAR_TERMS, SEMESTERS, getModule } from '../rulesets/index.js';
 import { OFFERINGS } from '../offerings/index.js';
 import { normalizePlanCourse } from '../engine/plan-rules.js';
 import { mergeModules, customModule, applyTagEdits, termOf, findSection, sectionCandidates, cleanSlots, customSection, termHint, parsePrereq, checkPrereq, prereqTextFor } from '../engine/index.js';
@@ -55,6 +55,7 @@ function emptyPlan() {
     identityIds: [],        // 內建身分模組，例：['minor.qf']
     customIdentities: [],   // 自訂身分：{ id, type, label, credits }
     options: { englishRoute: 'advanced-german' },
+    fifthYear: { enabled: false, terms: 'both' },
     courses: [],
     lockedSemesters: [],    // 已鎖定、不接受編輯的學期 id，例：['y1s1']
     tagEdits: { tags: {}, moves: {}, custom: [] },
@@ -90,6 +91,10 @@ function migrate(data) {
     majorId: data.majorId || base.majorId,
     version: PLAN_VERSION,
     options: { ...base.options, ...(data.options || {}) },
+    fifthYear: {
+      enabled: data.fifthYear?.enabled === true,
+      terms: FIFTH_YEAR_TERMS.find(({ value }) => value === data.fifthYear?.terms)?.value || 'both',
+    },
     identityIds: [...(data.identityIds || [])],
     customIdentities: [...(data.customIdentities || [])],
     // 舊版規劃檔沒有 section（選的班）與 customSlots（自訂時段），讀進來就是都還沒設。
@@ -334,6 +339,24 @@ export const store = {
 
   setOption(key, value) {
     plan.options[key] = value;
+    commit();
+  },
+
+  get visibleSemesters() {
+    const { enabled, terms } = plan.fifthYear;
+    return SEMESTERS.filter(({ id }) => {
+      if (id === 'y5s1') return enabled && terms !== 'lower';
+      if (id === 'y5s2') return enabled && terms !== 'upper';
+      return true;
+    });
+  },
+  setFifthYearEnabled(enabled) {
+    plan.fifthYear.enabled = Boolean(enabled);
+    commit();
+  },
+  setFifthYearTerms(terms) {
+    if (!FIFTH_YEAR_TERMS.some(({ value }) => value === terms)) return;
+    plan.fifthYear.terms = terms;
     commit();
   },
 

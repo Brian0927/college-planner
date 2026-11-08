@@ -7,10 +7,11 @@
  */
 
 /** 版本標記：畫面右下角會顯示，用來確認瀏覽器跑的是不是最新檔案 */
-export const BUILD = 'v29';
+export const BUILD = 'v30';
 
 import { evaluate } from '../engine/index.js';
 import { store } from './store.js';
+import { FIFTH_YEAR_TERMS } from '../rulesets/index.js';
 import { $, num, toast } from './dom.js';
 import { renderSetup } from './views/setup.js';
 import { renderPool } from './views/pool.js';
@@ -25,6 +26,7 @@ function renderAll() {
   renderHeader(report);
   renderSetup();
   renderPool();
+  renderFifthYearSettings();
   renderGrid();
   renderWeek();
   renderReport(report);
@@ -39,6 +41,17 @@ const setHTML = (sel, value) => {
   const el = $(sel);
   if (el) el.innerHTML = value;
 };
+
+function renderFifthYearSettings() {
+  const { enabled, terms } = store.plan.fifthYear;
+  const toggle = $('#fifthYearToggle');
+  const picker = $('#fifthYearTerms');
+  if (toggle) toggle.checked = enabled;
+  if (picker) {
+    picker.hidden = !enabled;
+    picker.value = terms;
+  }
+}
 
 function renderHeader(report) {
   const { plan, ruleset } = store;
@@ -122,6 +135,13 @@ on('#importFile', 'change', (e) => {
   if (e.target.files[0]) importPlan(e.target.files[0]);
   e.target.value = '';
 });
+const fifthYearTerms = $('#fifthYearTerms');
+if (fifthYearTerms) {
+  FIFTH_YEAR_TERMS.forEach(({ value, label }) => fifthYearTerms.add(new window.Option(label, value)));
+}
+on('#fifthYearToggle', 'change', (e) => store.setFifthYearEnabled(e.target.checked));
+on('#fifthYearTerms', 'change', (e) => store.setFifthYearTerms(e.target.value));
+
 on('#persistToggle', 'change', (e) => {
   store.setPersist(e.target.checked);
   toast(

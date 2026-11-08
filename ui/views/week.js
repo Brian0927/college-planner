@@ -1,5 +1,5 @@
 /**
- * ui/views/week.js — 週課表模式：八個學期各一張「週一～週五 × 節次」的表
+ * ui/views/week.js — 週課表模式：每學期各一張「週一～週五 × 節次」的表
  *
  * 跟列表模式（grid.js）讀的是同一份 plan.courses，任一邊移動課程，另一邊重畫時就同步了。
  * 課要先「選班」或設定「自訂時段」才知道上課時間（store.sectionOf）；還沒有時段、或選的班沒有固定時段的課，
@@ -13,7 +13,6 @@
 
 import { store } from '../store.js';
 import { $, esc, num, toast } from '../dom.js';
-import { SEMESTERS } from '../../rulesets/index.js';
 import { OFFERINGS } from '../../offerings/index.js';
 import { tagTable, PERIODS, sourcesFor, slotsOf, sectionCandidates, findConflicts, sortSlots } from '../../engine/index.js';
 import { chipHTML, getSelectedId, clearSelection, warnAfterAssign } from './pool.js';
@@ -32,7 +31,7 @@ export function renderWeek() {
   if (!box) return;
   const { plan, ruleset } = store;
   const tags = tagTable(plan, ruleset);
-  box.innerHTML = SEMESTERS.map((sem) => semesterCard(sem, tags)).join('');
+  box.innerHTML = store.visibleSemesters.map((sem) => semesterCard(sem, tags)).join('');
   if (!bound) bindEvents(box);
 }
 

@@ -1,12 +1,11 @@
 /**
- * ui/views/grid.js — 四年八學期課表
+ * ui/views/grid.js — 學期列表
  *
  * 兩種排課方式：拖曳，或先點卡片再點學期格子（手機上比較好用）。
  */
 
 import { store } from '../store.js';
 import { $, esc, num, toast } from '../dom.js';
-import { SEMESTERS } from '../../rulesets/index.js';
 import { tagTable } from '../../engine/index.js';
 import { chipHTML, getSelectedId, clearSelection, warnAfterAssign } from './pool.js';
 
@@ -16,7 +15,7 @@ export function renderGrid() {
   const { plan, ruleset } = store;
   const tags = tagTable(plan, ruleset);
 
-  $('#semesterGrid').innerHTML = SEMESTERS.map((sem) => {
+  $('#semesterGrid').innerHTML = store.visibleSemesters.map((sem) => {
     const list = plan.courses.filter((c) => c.semester === sem.id);
     const credits = list.reduce((s, c) => s + (Number(c.credit) || 0), 0);
     const locked = store.isSemesterLocked(sem.id);
