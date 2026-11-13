@@ -11,6 +11,7 @@
  */
 
 import { isActive, isCounted, normalizeName, toNumber } from './ruleset.js';
+import { PROGRAM_GROUP_PREFIX } from './programs.js';
 
 export function evaluateSubjects(plan, ruleset) {
   const options = plan.options || {};
@@ -23,11 +24,11 @@ export function evaluateSubjects(plan, ruleset) {
   });
 
   const groups = (ruleset.subjectGroups || [])
-    .filter((g) => isActive(g, options))
+    .filter((g) => !g.id.startsWith(PROGRAM_GROUP_PREFIX) && isActive(g, options))
     .map((g) => walkGroup(g, byName, options));
 
   const counted = groups.filter((g) => !g.optional);
-  const flat = flatten(groups);
+  const flat = flatten(counted);
 
   return {
     groups,

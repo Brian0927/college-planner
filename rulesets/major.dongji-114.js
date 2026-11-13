@@ -11,11 +11,11 @@ export default {
   "options": [
     {
       "id": "track",
-      "label": "專業學程（四擇一）",
+      "label": "專業學程篩選",
       "choices": [
         {
           "value": "",
-          "label": "— 尚未選擇 —"
+          "label": "全部學程"
         },
         {
           "value": "control",
@@ -87,6 +87,11 @@ export default {
       "color": "#8A94A8"
     },
     {
+      "id": "tag.ge-arts-practice",
+      "label": "多元選修通識・藝術操作",
+      "color": "#78839A"
+    },
+    {
       "id": "tag.dept",
       "label": "系定必修",
       "color": "#7A2E2E"
@@ -100,6 +105,16 @@ export default {
       "id": "tag.track",
       "label": "專業學程",
       "color": "#4A6FA1"
+    },
+    {
+      "id": "tag.track-control",
+      "label": "電控學程",
+      "color": "#39699A"
+    },
+    {
+      "id": "tag.track-nano",
+      "label": "奈微米學程",
+      "color": "#587C60"
     },
     {
       "id": "tag.major-elective",
@@ -149,10 +164,11 @@ export default {
             "tag.ge-core-2",
             "tag.ge-core-3",
             "tag.ge-core-4",
-            "tag.ge-general"
+            "tag.ge-general",
+            "tag.ge-arts-practice"
           ],
           "minCredits": 20,
-          "note": "核心四向度各至少一門；核心與一般通識合計至少 20 學分，兩者不另設各自最低學分。",
+          "note": "核心四向度各至少一門，與多元選修合計 20 學分。多元選修可在自然科學、社會科學、人文學三領域自由選擇；藝術操作類最多採計 2 學分。",
           "checks": [
             {
               "type": "minDistinctTags",
@@ -211,17 +227,12 @@ export default {
           "id": "bkt.track",
           "label": "專業學程",
           "tags": [
-            "tag.track"
+            "tag.track",
+            "tag.track-control",
+            "tag.track-nano"
           ],
           "minCredits": 15,
-          "note": "須修 5 門以上：核心 3 門必選＋選修 2 門以上。沒有認列上限",
-          "checks": [
-            {
-              "type": "minCourses",
-              "min": 5,
-              "label": "至少修 5 門"
-            }
-          ]
+          "note": "至少完成一個學程並達 15 學分。每個學程三門核心及至少兩門選修；兩學程須以十門不同課程搭配。"
         }
       ]
     },
@@ -233,11 +244,12 @@ export default {
       "buckets": [
         {
           "id": "bkt.elective",
-          "label": "主修選修",
+          "label": "其餘選修",
           "tags": [
             "tag.major-elective"
           ],
-          "minCredits": 20
+          "minCredits": 20,
+          "note": "動機系畢業表列 20 學分，建議修習邏輯思考與運算相關課程。方案依個人確認口徑採計可認列學分，包括未重複使用的中高級德語、外系課與超修通識。"
         }
       ]
     },
@@ -491,7 +503,7 @@ export default {
         "option": "track",
         "equals": "control"
       },
-      "defaultTag": "tag.track",
+      "defaultTag": "tag.track-control",
       "groups": [
         {
           "id": "grp.track.control.core",
@@ -503,17 +515,17 @@ export default {
             {
               "name": "控制系統一",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "控制系統二",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "電子學二",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             }
           ]
         },
@@ -528,81 +540,81 @@ export default {
             {
               "name": "微算機導論",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "電動機械",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "電磁學",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "振動學",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "系統動態分析",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "邏輯設計與應用",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "數值分析",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "生醫微型系統晶片",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "微機電系統導論",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "工程光學",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-control"
             },
             {
               "name": "線性系統理論",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所"
             },
             {
               "name": "數位控制系統",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所"
             },
             {
               "name": "非線性控制系統",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所"
             },
             {
               "name": "機器人學",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所"
             },
             {
               "name": "人工智慧",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所",
               "aliases": [
                 "人工智慧導論"
@@ -611,49 +623,49 @@ export default {
             {
               "name": "生醫微系統",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "電子電路分析",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "微奈米系統之感測與致動",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "數位電路分析與設計",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "聲學理論與應用",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "聲學陣列信號處理",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "移動機器人與自駕車專題",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "高等振動學",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-control",
               "note": "研究所；依實際開課學分調整"
             }
           ]
@@ -667,7 +679,7 @@ export default {
         "option": "track",
         "equals": "nano"
       },
-      "defaultTag": "tag.track",
+      "defaultTag": "tag.track-nano",
       "groups": [
         {
           "id": "grp.track.nano.core",
@@ -679,17 +691,17 @@ export default {
             {
               "name": "微機電系統導論",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             },
             {
               "name": "奈米科技與應用",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             },
             {
               "name": "振動學",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             }
           ]
         },
@@ -704,67 +716,70 @@ export default {
             {
               "name": "微系統概論",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano",
+              "aliases": [
+                "微系統概論一"
+              ]
             },
             {
               "name": "近代物理導論",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             },
             {
               "name": "高等材料力學",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             },
             {
               "name": "有限單元法導論",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             },
             {
               "name": "光機電系統設計",
               "credit": 3,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             },
             {
               "name": "固體與奈微米力學導論",
               "credit": 2,
-              "tag": "tag.track"
+              "tag": "tag.track-nano"
             },
             {
               "name": "微奈米製造技術",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-nano",
               "note": "研究所"
             },
             {
               "name": "奈米結構力學",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-nano",
               "note": "研究所"
             },
             {
               "name": "微系統設計",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-nano",
               "note": "研究所"
             },
             {
               "name": "奈米工程",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-nano",
               "note": "研究所"
             },
             {
               "name": "微奈米系統之感測與致動",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-nano",
               "note": "研究所；依實際開課學分調整"
             },
             {
               "name": "有限單元法",
               "credit": 3,
-              "tag": "tag.track",
+              "tag": "tag.track-nano",
               "note": "研究所；依實際開課學分調整"
             }
           ]
@@ -1086,5 +1101,5 @@ export default {
       ]
     }
   ],
-  "sourceUrl": "https://academic.site.nthu.edu.tw/var/file/7/1007/img/4108/712485888.pdf"
+  "sourceUrl": "https://registra.site.nthu.edu.tw/var/file/211/1211/img/76/758280258.pdf"
 };

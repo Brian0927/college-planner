@@ -12,7 +12,7 @@ export function resolvePlanRules(plan, ruleset) {
     buckets: cat.buckets.map(b => b.id !== 'bkt.english' ? { ...b, tags: b.tags.filter(t => t !== 'tag.english') } : {
       ...b, minCredits: 6,
       tags: [...new Set([...b.tags, 'tag.english'])],
-      note: '進階生第二外語方案：同一語言 6 學分。比原英文領域 8 學分少的 2 學分，須以任意課程補足畢業總學分 129；不自動贈予抵免學分。',
+      note: '進階生第二外語方案：同一語言 6 學分。初級德語一、二合計 6 學分，另須用實修學分補足畢業總學分。',
       replacement: { groups: GERMAN_BEGINNERS, label: '初級德語一、二替代英文領域' },
     }),
   }));
@@ -25,6 +25,7 @@ export function normalizePlanCourse(course, options = {}) {
     if (options.englishRoute === 'advanced-german') course.tag = 'tag.english';
     else if (course.tag === 'tag.english') course.tag = 'tag.major-elective';
   }
+  if (/^(中級|高級)德[語文]/.test(course.name) && (!course.tag || course.tag === 'tag.english')) course.tag = 'tag.major-elective';
   if (/^(大一)?體育/.test(course.name) && (!course.tag || course.tag === 'tag.major-elective')) course.tag = 'tag.pe';
   return course;
 }

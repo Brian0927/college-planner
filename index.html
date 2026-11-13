@@ -1,49 +1,51 @@
 <!DOCTYPE html>
-<html lang="zh-Hant" data-build="v30">
+<html lang="zh-Hant" data-build="v31">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>College Planner · 學期課表</title>
-<link rel="stylesheet" href="./assets/app.css?v=30">
+<link rel="stylesheet" href="./assets/app.css?v=31">
 <!-- cache-bust:start -->
 <!-- 這一段由 tools/bump-build.mjs 產生，請不要手改 -->
 <script type="importmap">
 {
   "imports": {
-    "./engine/credit.js": "./engine/credit.js?v=30",
-    "./engine/index.js": "./engine/index.js?v=30",
-    "./engine/merge.js": "./engine/merge.js?v=30",
-    "./engine/plan-rules.js": "./engine/plan-rules.js?v=30",
-    "./engine/ruleset.js": "./engine/ruleset.js?v=30",
-    "./engine/schedule.js": "./engine/schedule.js?v=30",
-    "./engine/subject.js": "./engine/subject.js?v=30",
-    "./offerings/114-2/GE.js": "./offerings/114-2/GE.js?v=30",
-    "./offerings/114-2/PME.js": "./offerings/114-2/PME.js?v=30",
-    "./offerings/114-2/QF.js": "./offerings/114-2/QF.js?v=30",
-    "./offerings/115-1/GE.js": "./offerings/115-1/GE.js?v=30",
-    "./offerings/115-1/LANG.js": "./offerings/115-1/LANG.js?v=30",
-    "./offerings/115-1/PME.js": "./offerings/115-1/PME.js?v=30",
-    "./offerings/115-1/QF.js": "./offerings/115-1/QF.js?v=30",
-    "./offerings/index.js": "./offerings/index.js?v=30",
-    "./rulesets/dongji-113.js": "./rulesets/dongji-113.js?v=30",
-    "./rulesets/index.js": "./rulesets/index.js?v=30",
-    "./rulesets/languages-115.js": "./rulesets/languages-115.js?v=30",
-    "./rulesets/major.dongji-114.js": "./rulesets/major.dongji-114.js?v=30",
-    "./rulesets/minor.ee.js": "./rulesets/minor.ee.js?v=30",
-    "./rulesets/minor.fl.js": "./rulesets/minor.fl.js?v=30",
-    "./rulesets/minor.mse.js": "./rulesets/minor.mse.js?v=30",
-    "./rulesets/minor.qf.js": "./rulesets/minor.qf.js?v=30",
-    "./ui/dom.js": "./ui/dom.js?v=30",
-    "./ui/store.js": "./ui/store.js?v=30",
-    "./ui/views/course-suggest.js": "./ui/views/course-suggest.js?v=30",
-    "./ui/views/grid.js": "./ui/views/grid.js?v=30",
-    "./ui/views/help.js": "./ui/views/help.js?v=30",
-    "./ui/views/pool.js": "./ui/views/pool.js?v=30",
-    "./ui/views/report.js": "./ui/views/report.js?v=30",
-    "./ui/views/section-picker.js": "./ui/views/section-picker.js?v=30",
-    "./ui/views/setup.js": "./ui/views/setup.js?v=30",
-    "./ui/views/tags.js": "./ui/views/tags.js?v=30",
-    "./ui/views/week.js": "./ui/views/week.js?v=30"
+    "./engine/credit.js": "./engine/credit.js?v=31",
+    "./engine/index.js": "./engine/index.js?v=31",
+    "./engine/merge.js": "./engine/merge.js?v=31",
+    "./engine/plan-rules.js": "./engine/plan-rules.js?v=31",
+    "./engine/programs.js": "./engine/programs.js?v=31",
+    "./engine/ruleset.js": "./engine/ruleset.js?v=31",
+    "./engine/schedule.js": "./engine/schedule.js?v=31",
+    "./engine/subject.js": "./engine/subject.js?v=31",
+    "./offerings/114-2/GE.js": "./offerings/114-2/GE.js?v=31",
+    "./offerings/114-2/PME.js": "./offerings/114-2/PME.js?v=31",
+    "./offerings/114-2/QF.js": "./offerings/114-2/QF.js?v=31",
+    "./offerings/115-1/GE.js": "./offerings/115-1/GE.js?v=31",
+    "./offerings/115-1/LANG.js": "./offerings/115-1/LANG.js?v=31",
+    "./offerings/115-1/PME.js": "./offerings/115-1/PME.js?v=31",
+    "./offerings/115-1/QF.js": "./offerings/115-1/QF.js?v=31",
+    "./offerings/index.js": "./offerings/index.js?v=31",
+    "./rulesets/dongji-113.js": "./rulesets/dongji-113.js?v=31",
+    "./rulesets/index.js": "./rulesets/index.js?v=31",
+    "./rulesets/languages-115.js": "./rulesets/languages-115.js?v=31",
+    "./rulesets/major.dongji-114.js": "./rulesets/major.dongji-114.js?v=31",
+    "./rulesets/minor.ee.js": "./rulesets/minor.ee.js?v=31",
+    "./rulesets/minor.fl.js": "./rulesets/minor.fl.js?v=31",
+    "./rulesets/minor.mse.js": "./rulesets/minor.mse.js?v=31",
+    "./rulesets/minor.qf.js": "./rulesets/minor.qf.js?v=31",
+    "./ui/dom.js": "./ui/dom.js?v=31",
+    "./ui/store.js": "./ui/store.js?v=31",
+    "./ui/views/course-catalog.js": "./ui/views/course-catalog.js?v=31",
+    "./ui/views/course-suggest.js": "./ui/views/course-suggest.js?v=31",
+    "./ui/views/grid.js": "./ui/views/grid.js?v=31",
+    "./ui/views/help.js": "./ui/views/help.js?v=31",
+    "./ui/views/pool.js": "./ui/views/pool.js?v=31",
+    "./ui/views/report.js": "./ui/views/report.js?v=31",
+    "./ui/views/section-picker.js": "./ui/views/section-picker.js?v=31",
+    "./ui/views/setup.js": "./ui/views/setup.js?v=31",
+    "./ui/views/tags.js": "./ui/views/tags.js?v=31",
+    "./ui/views/week.js": "./ui/views/week.js?v=31"
   }
 }
 </script>
@@ -95,12 +97,13 @@
       <span>自動保存<small>僅此瀏覽器</small></span>
     </label>
     <button class="btn-ghost btn-small" id="helpBtn" type="button">使用說明</button>
-    <button class="btn-ghost btn-small" id="exportBtn" type="button">匯出規劃</button>
-    <button class="btn-ghost btn-small" id="importBtn" type="button">匯入規劃</button>
-    <button class="btn-ghost btn-small" id="resetBtn" type="button">清空</button>
-    <input type="file" id="importFile" accept="application/json" hidden>
+    <select id="scenarioPick" aria-label="目前方案"></select>
+    <button class="btn-ghost btn-small" id="scenarioAdd" type="button">新增方案</button>
+    <button class="btn-ghost btn-small" id="scenarioCompare" type="button">比較方案</button>
+    <button class="btn-ghost btn-small" id="resetBtn" type="button">清空目前方案</button>
   </div>
 </header>
+<dialog id="scenarioDialog" aria-labelledby="scenarioTitle"></dialog>
 
 <div class="layout">
   <!-- 側欄收起時留在畫面最左邊的細邊，滑鼠移上去側欄就浮出來。
@@ -115,7 +118,15 @@
     <div class="card-box" id="setupBox"></div>
 
     <div class="section-label"><span class="n">2</span>規定科目匯入</div>
-    <div class="card-box" id="importBox"></div>
+    <button class="btn-ghost" id="importOpen" type="button">開啟課程清單</button>
+    <dialog id="importDialog" aria-labelledby="importTitle">
+      <form method="dialog" class="dialog-head">
+        <h2 id="importTitle">規定科目與選修課程</h2>
+        <button class="btn-ghost" type="submit">關閉</button>
+      </form>
+      <div id="importFilters"></div>
+      <div id="importBox"></div>
+    </dialog>
 
     <div class="section-label"><span class="n">3</span>新增課程</div>
     <div class="card-box" id="addCourseBox"></div>
@@ -161,13 +172,13 @@
     <div id="reportBody"></div>
     <p class="footnote" style="margin-top:18px">
       判定結果僅供規劃參考，實際畢業資格以系辦與教務處公告為準。<br>
-      <span id="persistNote"></span>要留下規劃也可以按右上角「匯出規劃」下載檔案，下次用「匯入規劃」讀回來。
+      <span id="persistNote"></span>各方案可用上方的方案選單切換。
       <span class="build-stamp" id="buildStamp" title="用來確認瀏覽器載入的是哪一版檔案">—</span>
     </p>
   </main>
 </div>
 
-<script type="module" src="./ui/main.js?v=30"></script>
+<script type="module" src="./ui/main.js?v=31"></script>
 
 <!-- 自我診斷：程式沒跑起來時，直接說明原因，而不是留一個空骨架給使用者 -->
 <script>

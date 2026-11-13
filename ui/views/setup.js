@@ -8,14 +8,13 @@
 import { store } from '../store.js';
 import { $, esc, num, toast, delegate } from '../dom.js';
 import { MAJORS, IDENTITIES } from '../../rulesets/index.js';
-import languageGroups from '../../rulesets/languages-115.js';
-import { isActive, typeLabel } from '../../engine/index.js';
+import { catalogGroups } from './course-catalog.js';
+import { typeLabel } from '../../engine/index.js';
 
 let bound = false;
 
-export function renderSetup() {
+export function renderSetup(progress) {
   const { plan, ruleset } = store;
-  const major = MAJORS.find((m) => m.id === plan.majorId);
 
   /* 草稿或未核對的資料，畫面上要講清楚 */
   const dataWarnings = store.modules
@@ -26,6 +25,7 @@ export function renderSetup() {
     <fieldset class="pick-group">
       <legend>主修（114 學年入學）</legend>
       ${MAJORS.map((m) => majorRow(m, m.id === plan.majorId)).join('')}
+      ${programStatus(progress)}
     </fieldset>
 
     <fieldset class="pick-group">
@@ -55,7 +55,9 @@ export function renderSetup() {
     </div>
 
 
-    ${(ruleset.options || [])
+    ${catalogFilters(plan, ruleset)}
+
+    ${(ruleset.options || []).filter(opt => opt.id !== 'track')
       .map(
         (opt) => `
       <label for="opt-${esc(opt.id)}">${esc(opt.label)}</label>
@@ -81,8 +83,34 @@ export function renderSetup() {
     </details>
   `;
 
-  renderImportPanel();
+  if ($('#importDialog').open) renderImportPanel();
   if (!bound) bindEvents();
+}
+
+
+function programStatus({ programs, recognized, controlAndNano }) {
+  const visible = programs.filter(program => ['control', 'nano'].includes(program.id) || program.core || program.electives);
+  return '<div class="program-status">' + visible.map(program => {
+    const status = recognized.includes(program.id) ? '達標' : program.complete ? '單獨達標，與其他學程有重疊' : program.core || program.electives ? '修課中' : '尚未排課';
+    return '<div><strong>' + esc(program.label) + '</strong>　' + status
+      + '<br>核心 ' + program.core + '／' + program.coreRequired
+      + ' 門・選修 ' + program.electives + '／2 門・' + num(program.credits) + '／15 學分'
+      + (program.missingCore.length ? '<br><small>待排核心：' + esc(program.missingCore.join('、')) + '</small>' : '') + '</div>';
+  }).join('') + '<div><strong>電控＋奈微米</strong>　' + (controlAndNano ? '雙學程達標' : '雙學程未達標')
+    + '<br><small>依已排課程試算。雙學程至少需要 10 門不同課程；外系核心課須先取得抵免認定。</small></div></div>';
+}
+
+function catalogFilters(plan, ruleset, suffix = '') {
+  const track = ruleset.options.find(opt => opt.id === 'track');
+  const years = ['全部年級', '大一', '大二', '大三', '大四', '大五'];
+  const options = (choices, selected) => choices.map(({ value, label }) =>
+    '<option value="' + esc(value) + '"' + (value === selected ? ' selected' : '') + '>' + esc(label) + '</option>').join('');
+  return '<div class="catalog-filters"><label for="catalogTrack' + suffix + '">專業學程篩選</label>'
+    + '<select id="catalogTrack' + suffix + '" data-option="track">' + options(track.choices, plan.options.track || '') + '</select>'
+    + '<label for="catalogYear' + suffix + '">建議修課年級</label>'
+    + '<select id="catalogYear' + suffix + '" data-option="catalogYear">'
+    + options(years.map((label, index) => ({ value: index ? String(index) : '', label })), plan.options.catalogYear || '') + '</select>'
+    + '<p class="footnote">依系上流程圖與科號提供建議。開課與選課資格以校務系統為準。</p></div>';
 }
 
 /* ── 勾選列 ───────────────────────────────── */
@@ -118,23 +146,23 @@ function customRow(c) {
 /* ── 規定科目匯入 ─────────────────────────── */
 function renderImportPanel() {
   const { plan, ruleset } = store;
-  const groups = [...(ruleset.subjectGroups || []).filter((g) => isActive(g, plan.options)), ...languageGroups];
-  const rows = groups.map((g) => renderGroup(g, plan.options)).filter(Boolean).join('');
+  const rows = catalogGroups(plan, ruleset).map(group => renderGroup(group)).join('');
+  $('#importFilters').innerHTML = catalogFilters(plan, ruleset, 'Dialog');
 
   $('#importBox').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <span class="footnote" style="margin:0">勾選後加入，標籤自動帶入</span>
       <button class="link-btn" id="importToggleAll" type="button">全選 / 取消</button>
     </div>
-    <div id="importList" style="max-height:300px;overflow-y:auto;border:1px solid var(--hairline);background:#fff;border-radius:2px">
-      ${rows || '<p class="empty-note" style="padding:10px">這些身分沒有列出規定科目。</p>'}
+    <div id="importList" class="import-list">
+      ${rows || '<p class="empty-note" style="padding:10px">此篩選沒有列出課程。可切換「全部年級」查看。</p>'}
     </div>
     <button class="btn-primary" id="importAddBtn" type="button">＋ 加入勾選的課程</button>
   `;
 }
 
-function renderGroup(group, options, depth = 0) {
-  const children = (group.groups || []).filter((g) => isActive(g, options));
+function renderGroup(group, depth = 0) {
+  const children = (group.groups || []).filter(child => (child.items || []).length || (child.groups || []).length);
   const items = group.items || [];
   if (!children.length && !items.length) return '';
 
@@ -145,7 +173,7 @@ function renderGroup(group, options, depth = 0) {
   const note = group.note ? `<p class="footnote" style="padding:4px 10px">${esc(group.note)}</p>` : '';
   const body = items
     .map((item) => {
-      const exists = store.hasCourse(item.name);
+      const exists = [item.name, ...(item.aliases || [])].some(name => store.hasCourse(name));
       return `
       <label style="display:flex;gap:8px;align-items:flex-start;padding:6px 10px;border-bottom:1px solid var(--hairline);font-size:12.5px;cursor:${
         exists ? 'default' : 'pointer'
@@ -161,7 +189,7 @@ function renderGroup(group, options, depth = 0) {
     })
     .join('');
 
-  return head + note + body + children.map((g) => renderGroup(g, options, depth + 1)).join('');
+  return head + note + body + children.map((g) => renderGroup(g, depth + 1)).join('');
 }
 
 /* ── 事件 ─────────────────────────────────── */
@@ -176,7 +204,11 @@ function bindEvents() {
       store.selectMinor(t.value);
       return toast(t.value ? '已切換輔系；原有課程保留，舊輔系課程改列主修選修' : '已取消輔系；課程保留');
     }
-    if (t.dataset.option) return store.setOption(t.dataset.option, t.value);
+    if (t.dataset.option) {
+      store.setOption(t.dataset.option, t.value);
+      document.getElementById(t.id)?.focus();
+      return;
+    }
 
     if (t.dataset.identity) {
       const id = t.dataset.identity;
@@ -194,6 +226,18 @@ function bindEvents() {
       store.removeIdentity(id);
       toast('已移除身分');
     }
+  });
+
+  const dialog = $('#importDialog');
+  $('#importOpen').addEventListener('click', () => {
+    renderImportPanel();
+    dialog.showModal();
+  });
+  $('#importFilters').addEventListener('change', event => {
+    const option = event.target.dataset.option;
+    if (!option) return;
+    store.setOption(option, event.target.value);
+    $(option === 'track' ? '#catalogTrackDialog' : '#catalogYearDialog').focus();
   });
 
   const box = $('#importBox');
@@ -220,6 +264,7 @@ function bindEvents() {
 
     if (!unique.length) return toast('勾選的課程都已經在清單裡了');
     store.addCourses(unique);
+    dialog.close();
     toast(
       skipped
         ? `已加入 ${unique.length} 門課，略過 ${skipped} 門重複的`

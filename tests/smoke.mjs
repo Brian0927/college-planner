@@ -27,7 +27,10 @@ globalThis.URL.revokeObjectURL = () => {};
 
 const load = (p) => import(new URL(p, root).href);
 
+window.HTMLDialogElement.prototype.showModal ??= function () { this.open = true; };
+window.HTMLDialogElement.prototype.close ??= function () { this.open = false; };
 await load('ui/main.js');
+window.document.querySelector('#helpClose')?.click();
 const { store } = await load('ui/store.js');
 const { evaluate } = await load('engine/index.js');
 
@@ -46,12 +49,14 @@ check('預設勾選動機系 114',
   window.document.querySelector('input[name=majorPick]:checked').value === 'major.dongji-114',
   window.document.querySelector('input[name=majorPick]:checked').value);
 check('114 科目表已核對', $('.data-warn') === null);
+$('#importOpen').click();
 check('匯入清單有內容', $('#importList').children.length > 0, `${$('#importList').children.length} 列`);
 check('八個學期格子都在', window.document.querySelectorAll('.sem-body').length === 8);
 check('動機系 114 → 應修 129', text('#ledgerTotal') === '129', text('#ledgerTotal'));
 check('判定分頁有兩個', $('#reportTabs').children.length === 2);
 check('版本標記有顯示', $('#buildStamp').textContent.trim().length > 0, $('#buildStamp').textContent);
 
+$('#importDialog').close();
 console.log('\n【自動保存開關】');
 check('預設未打勾', store.persistEnabled === false && $('#persistToggle').checked === false);
 check('標示「僅此瀏覽器」', $('.persist-toggle').textContent.includes('僅此瀏覽器'));
@@ -76,6 +81,7 @@ check('標題列同時顯示兩個身分',
   $('#majorSub').textContent.includes('動力機械') && $('#majorSub').textContent.includes('計量財務'),
   $('#majorSub').textContent);
 check('學分明細有三列（主修/輔系/合計）', window.document.querySelectorAll('.credit-sum .cs-row').length === 3);
+$('#importOpen').click();
 check('匯入清單多了輔系指定科目', $('#importList').textContent.includes('衍生性金融市場'));
 
 console.log('\n【匯入規定科目】');
@@ -96,11 +102,11 @@ check('科目群組有渲染', window.document.querySelectorAll('.subj-group').l
 check('有打勾的科目', window.document.querySelectorAll('.subj-item.checked').length === 5,
   String(window.document.querySelectorAll('.subj-item.checked').length));
 
-console.log('\n【選專業學程 → 規則跟著變】');
+console.log('\n【學程篩選不改變判定】');
 const before = window.document.querySelectorAll('.subj-group').length;
 store.setOption('track', 'control');
 const after = window.document.querySelectorAll('.subj-group').length;
-check('學程群組出現了', after > before, `${before} → ${after} 組`);
+check('科目群組數相同', after === before, `${before} → ${after} 組`);
 
 console.log('\n【改標籤 → 學分換一類】');
 $('#reportTabs').querySelector('[data-tab="credit"]').click();
@@ -123,20 +129,20 @@ console.log('\n【標籤設定視窗】');
 const { openTagEditor } = await load('ui/views/tags.js');
 openTagEditor();
 check('視窗開啟', $('.overlay') !== null);
-check('列出 14 個標籤（主修 13 ＋ 輔系 1）', window.document.querySelectorAll('.tag-table tbody tr').length === 14,
+check('列出 17 個標籤（主修 16 ＋ 輔系 1）', window.document.querySelectorAll('.tag-table tbody tr').length === 17,
   String(window.document.querySelectorAll('.tag-table tbody tr').length));
 $('#tagClose').click();
 check('標籤視窗關閉', $('#tagClose') === null);
 
-console.log('\n【匯出 / 匯入】');
-const json = store.exportPlan();
+console.log('\n【方案資料獨立】');
+const original = store.activeScenarioId;
 const count = store.plan.courses.length;
-store.reset();
-check('清空後沒有課', store.plan.courses.length === 0);
-store.importPlan(json);
-check('匯入後課程回來了', store.plan.courses.length === count, `${count} 門`);
+store.addScenario('空白方案', false);
+check('空白方案沒有課', store.plan.courses.length === 0);
+store.selectScenario(original);
+check('切回原方案後課程回來了', store.plan.courses.length === count, `${count} 門`);
 const scheduled = store.plan.courses.filter((c) => c.semester).length;
-check('匯入後畫面與資料一致', window.document.querySelectorAll('.sem-body .chip').length === scheduled,
+check('切回後畫面與資料一致', window.document.querySelectorAll('.sem-body .chip').length === scheduled,
   `畫面 ${window.document.querySelectorAll('.sem-body .chip').length} / 資料 ${scheduled}`);
 
 console.log('\n【取消勾選 → 學分要求跟著降】');

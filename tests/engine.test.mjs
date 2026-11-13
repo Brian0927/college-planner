@@ -26,9 +26,9 @@ test('規則集本身沒有結構錯誤', () => {
   assert.deepEqual(issues.filter((i) => i.level === 'error'), []);
 });
 
-test('主修的 13 個標籤全部有對應到項目與大類', () => {
+test('主修的 16 個標籤全部有對應到項目與大類', () => {
   const table = tagTable(plan([]), ruleset);
-  assert.equal(table.length, 13); // 含核心通識向度一～四與體育
+  assert.equal(table.length, 16); // 含核心通識向度一～四與體育
   table.forEach((t) => {
     assert.ok(t.bucketId, `${t.label} 沒有對應項目`);
     assert.ok(t.categoryId, `${t.label} 沒有對應大類`);
@@ -86,13 +86,14 @@ test('物理超修的學分留在物理領域，不會溢出', () => {
   assert.equal(r.credit.total.overCounted, 0, '沒有任何學分因額滿而消失');
 });
 
-test('專業學程超修也全數計入', () => {
+test('專業學程超修可轉入其餘選修且只計一次', () => {
   const courses = ['控制系統一', '控制系統二', '電子學二', '振動學', '數值分析', '電磁學'].map((n) =>
     course(n, 3, 'tag.track')
   );
   const r = evaluate(plan(courses, { track: 'control' }), ruleset);
-  assert.equal(findBucket(r, 'bkt.track').earned, 18, '18 學分全計入專業學程');
-  assert.equal(findBucket(r, 'bkt.elective').earned, 0);
+  assert.equal(findBucket(r, 'bkt.track').earned, 15);
+  assert.equal(findBucket(r, 'bkt.elective').earned, 3);
+  assert.equal(r.credit.total.earned,18);
 });
 
 test('認列學分永遠等於實修學分（沒有上限就不會有學分被丟掉）', () => {
@@ -171,48 +172,17 @@ test('一門課的學分只會出現在一個領域', () => {
   );
 });
 
-test('工程光學標成物理領域時，專業學程拿不到那 3 學分', () => {
-  const p = plan(
-    [
-      course('工程光學', 3, 'tag.physics'), // 同時符合物理與電控學程選修，但標籤是物理
-      course('控制系統一', 3, 'tag.track'),
-      course('控制系統二', 3, 'tag.track'),
-      course('電子學二', 3, 'tag.track'),
-      course('振動學', 3, 'tag.track'),
-    ],
-    { track: 'control' }
-  );
-  const r = evaluate(p, ruleset);
-
-  assert.equal(findBucket(r, 'bkt.physics').earned, 3, '學分全給物理領域');
-  assert.equal(findBucket(r, 'bkt.track').earned, 12, '專業學程只有 4 門 track 課的 12 學分');
-  assert.equal(findBucket(r, 'bkt.track').checks[0].have, 4, '專業學程門數也不計入工程光學');
-
-  // 改標籤成專業學程，學分就整個搬過去
-  p.courses[0].tag = 'tag.track';
-  const r2 = evaluate(p, ruleset);
-  assert.equal(findBucket(r2, 'bkt.physics').earned, 0, '物理領域變成 0');
-  assert.equal(findBucket(r2, 'bkt.track').earned, 15);
-  assert.equal(findBucket(r2, 'bkt.track').checks[0].have, 5);
-});
-
-test('科目判定仍會打勾，但標記出學分落到別處', () => {
-  const r = evaluate(
-    plan([course('工程光學', 3, 'tag.physics')], { track: 'control' }),
-    ruleset
-  );
-  const physItem = r.subject.groups
-    .find((g) => g.id === 'grp.physics')
-    .items.find((i) => i.name === '工程光學');
-  assert.equal(physItem.checked, true);
-  assert.equal(physItem.tagMismatch, false, '在物理群組裡標籤是相符的');
-
-  const trackItem = r.subject.groups
-    .find((g) => g.id === 'grp.track.control')
-    .groups.find((g) => g.id === 'grp.track.control.elec')
-    .items.find((i) => i.name === '工程光學');
-  assert.equal(trackItem.checked, true, '有排到就打勾');
-  assert.equal(trackItem.tagMismatch, true, '但標籤不是專業學程，要標記出來');
+test('工程光學可雙重認證，畢業總學分只採計一次', () => {
+  const p = plan([
+    course('工程光學', 3, 'tag.physics'),
+    ...['控制系統一','控制系統二','電子學二','振動學'].map(name => course(name,3,'tag.track-control')),
+  ]);
+  const report = evaluate(p, ruleset);
+  assert.equal(findBucket(report, 'bkt.physics').earned, 3);
+  assert.equal(findBucket(report, 'bkt.track').earned, 12);
+  assert.equal(findBucket(report, 'bkt.track').sharedCredits, 3);
+  assert.equal(findBucket(report, 'bkt.track').met, true);
+  assert.equal(report.credit.total.earned, 15);
 });
 
 test('通識學分夠但沒修核心，不算達標', () => {
@@ -275,8 +245,8 @@ test('身分別決定畢業學分：主修 129 ＋ 輔系 20 ＝ 149', () => {
 });
 
 test('加了輔系才有輔系標籤與項目', () => {
-  assert.equal(tagTable(plan([]), ruleset).length, 13);
-  assert.equal(tagTable(plan([]), withMinor).length, 14);
+  assert.equal(tagTable(plan([]), ruleset).length, 16);
+  assert.equal(tagTable(plan([]), withMinor).length, 17);
   assert.ok(!ruleset.categories.some((c) => c.id === 'cat.identity'));
   assert.ok(withMinor.categories.some((c) => c.id === 'cat.identity'));
 });
@@ -351,25 +321,25 @@ test('科目判定：五選二修滿 2 門就達標', () => {
   assert.equal(g.need, 2);
 });
 
-test('科目判定：學程巢狀群組，核心 3 門＋選修 2 門才過', () => {
-  const withTrack = (names) => plan(names.map((n) => course(n, 3, 'tag.track')), { track: 'control' });
-
-  const partial = evaluate(withTrack(['控制系統一', '控制系統二', '電子學二']), ruleset);
-  const g1 = partial.subject.groups.find((g) => g.id === 'grp.track.control');
-  assert.equal(g1.groups[0].satisfied, true, '核心 3 門已修畢');
-  assert.equal(g1.groups[1].satisfied, false, '選修還沒 2 門');
-  assert.equal(g1.satisfied, false);
-
-  const full = evaluate(
-    withTrack(['控制系統一', '控制系統二', '電子學二', '振動學', '數值分析']),
-    ruleset
-  );
-  assert.equal(full.subject.groups.find((g) => g.id === 'grp.track.control').satisfied, true);
+test('電控與奈微米各自達標時仍須可分配十門相異課程', () => {
+  const names = ['控制系統一','控制系統二','電子學二','微機電系統導論','奈米科技與應用','振動學',
+    '數值分析','微奈米系統之感測與致動','高等材料力學'];
+  const courses = names.map(name => course(name, 3, 'tag.track'));
+  const partial = evaluate(plan(courses, { track: 'control' }), ruleset);
+  assert.deepEqual(partial.programs.programs.filter(p => p.complete).map(p => p.id), ['control','nano']);
+  assert.equal(partial.programs.controlAndNano, false);
+  assert.deepEqual(partial.programs, evaluate(plan(courses, { track: 'nano', catalogYear: '4' }), ruleset).programs);
+  const both = evaluate(plan([...courses, course('奈米工程',3,'tag.track-nano')]), ruleset);
+  assert.equal(both.programs.controlAndNano, true);
+  assert.equal(both.programs.recognized.length, 2);
 });
 
-test('未選學程時，四個學程群組都不出現', () => {
-  const r = evaluate(plan([]), ruleset);
-  assert.equal(r.subject.groups.filter((g) => g.id.startsWith('grp.track')).length, 0);
+test('重複選同一門課或把課放待排，不會增加學程門數', () => {
+  const courses = ['控制系統一','控制系統二','電子學二','數值分析'].map(name => course(name,3,'tag.track'));
+  courses.push(course('數值分析',3,'tag.track'), {...course('振動學',3,'tag.track'),semester:null});
+  const report = evaluate(plan(courses), ruleset);
+  assert.equal(report.programs.programs[0].electives,1);
+  assert.equal(report.programs.programs[0].complete,false);
 });
 
 test('課名比對忽略空白', () => {

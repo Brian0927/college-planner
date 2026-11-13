@@ -24,10 +24,11 @@ export function renderGrid() {
         <div class="sem-head">
           <h3>${esc(sem.year)} ${esc(sem.term)}</h3>
           <button class="lock-btn${locked ? ' on' : ''}" data-lock="${esc(sem.id)}" type="button"
-                  aria-pressed="${locked}"
+                  aria-pressed="${locked}" ${store.isExchangeSemester(sem.id) ? 'disabled' : ''}
                   title="${locked ? '解鎖，恢復編輯' : '鎖住這個學期，避免誤動已排好的課'}">
             ${lockIcon(locked)}
           </button>
+          ${exchangeControls(sem.id)}
           <span class="spacer"></span>
           <span class="credit-badge">${num(credits)} 學分</span>
         </div>
@@ -59,6 +60,27 @@ export function lockIcon(locked) {
     </svg>`;
 }
 
+export function exchangeControls(semester) {
+  const exchange = store.isExchangeSemester(semester);
+  const approved = store.isExchangeApproved(semester);
+  return '<button class="btn-ghost btn-small exchange-btn" type="button" data-exchange="' + esc(semester)
+    + '" aria-pressed="' + exchange + '">' + (exchange ? '取消交換' : '標示交換') + '</button>'
+    + (exchange ? '<button class="btn-ghost btn-small exchange-btn" type="button" data-exchange-approval="' + esc(semester)
+      + '" aria-pressed="' + approved + '">' + (approved ? '撤回抵免' : '確認抵免') + '</button>'
+      + '<span class="exchange-status">' + (approved ? '交換・抵免已確認' : '交換・暫不採計') + '</span>' : '');
+}
+
+export function handleExchangeAction(target) {
+  const button = target.closest('[data-exchange], [data-exchange-approval]');
+  if (!button) return false;
+  if (button.dataset.exchange) store.toggleExchangeSemester(button.dataset.exchange);
+  else if (store.isExchangeApproved(button.dataset.exchangeApproval)
+    || confirm('確認這個交換學期的已排課程皆可依其標籤抵免並納入此方案？')) {
+    store.toggleExchangeApproval(button.dataset.exchangeApproval);
+  }
+  return true;
+}
+
 function bindEvents() {
   bound = true;
   const grid = $('#semesterGrid');
@@ -84,8 +106,9 @@ function bindEvents() {
 
   /* 點鎖頭 = 切換該學期的鎖定狀態 */
   grid.addEventListener('click', (e) => {
+    if (handleExchangeAction(e.target)) return;
     const btn = e.target.closest('[data-lock]');
-    if (!btn) return;
+    if (!btn || store.isExchangeSemester(btn.dataset.lock)) return;
     e.stopPropagation();
     const sem = btn.dataset.lock;
     toast(store.toggleSemesterLock(sem) ? '已鎖定，這個學期不能編輯' : '已解鎖，可以繼續編輯');
@@ -93,7 +116,7 @@ function bindEvents() {
 
   /* 點選格子 = 把目前選取的卡片放進來 */
   grid.addEventListener('click', (e) => {
-    if (e.target.closest('.chip')) return; // 點卡片本身交給 pool.js 處理選取
+    if (e.target.closest('.chip, button')) return; // 點卡片本身交給 pool.js 處理選取
     const body = e.target.closest('.sem-body');
     const id = getSelectedId();
     if (!body || !id) return;

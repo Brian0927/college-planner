@@ -16,7 +16,7 @@ import { $, esc, num, toast } from '../dom.js';
 import { OFFERINGS } from '../../offerings/index.js';
 import { tagTable, PERIODS, sourcesFor, slotsOf, sectionCandidates, findConflicts, sortSlots } from '../../engine/index.js';
 import { chipHTML, getSelectedId, clearSelection, warnAfterAssign } from './pool.js';
-import { lockIcon } from './grid.js';
+import { exchangeControls, handleExchangeAction, lockIcon } from './grid.js';
 import { openSectionPicker } from './section-picker.js';
 
 const WEEKDAYS = ['M', 'T', 'W', 'R', 'F'];
@@ -63,10 +63,11 @@ function semesterCard(sem, tags) {
         <h3>${esc(sem.year)} ${esc(sem.term)}</h3>
         <span class="wk-term mono">${esc(term || '')}</span>
         <button class="lock-btn${locked ? ' on' : ''}" data-lock="${esc(sem.id)}" type="button"
-                aria-pressed="${locked}"
+                aria-pressed="${locked}" ${store.isExchangeSemester(sem.id) ? 'disabled' : ''}
                 title="${locked ? '解鎖，恢復編輯' : '鎖住這個學期，避免誤動已排好的課'}">
           ${lockIcon(locked)}
         </button>
+        ${exchangeControls(sem.id)}
         <span class="spacer"></span>
         ${clash ? `<span class="wk-clash-badge">衝堂 ${clash}</span>` : ''}
         <span class="credit-badge">${num(credits)} 學分</span>
@@ -167,6 +168,7 @@ function bindEvents(box) {
   bound = true;
 
   box.addEventListener('click', (e) => {
+    if (handleExchangeAction(e.target)) return;
     const lock = e.target.closest('[data-lock]');
     if (lock) {
       e.stopPropagation();

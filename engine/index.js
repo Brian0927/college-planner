@@ -27,20 +27,71 @@ import { applyTagEdits, buildIndex, validateRuleset } from './ruleset.js';
 import { evaluateSubjects } from './subject.js';
 import { evaluateCredits } from './credit.js';
 import { resolvePlanRules } from './plan-rules.js';
+import { evaluatePrograms, physicsProgramCredits, PROGRAM_GROUP_PREFIX } from './programs.js';
 
 export function evaluate(plan, baseRuleset) {
   const base = applyTagEdits(baseRuleset, plan.tagEdits || {});
   const issues = validateRuleset(base);
-  const resolved = resolvePlanRules(plan, base);
+  const pendingExchange = new Set((plan.exchangeSemesters || []).filter(id => !(plan.approvedExchangeSemesters || []).includes(id)));
+  const assessablePlan = pendingExchange.size
+    ? { ...plan, courses: (plan.courses || []).filter(course => !pendingExchange.has(course.semester)) }
+    : plan;
+  const resolved = resolvePlanRules(assessablePlan, base);
   const ruleset = resolved.ruleset;
   plan = resolved.plan;
   const index = buildIndex(ruleset, plan.options || {});
 
+  const programs = evaluatePrograms(plan, ruleset);
+  const subject = evaluateSubjects(plan, ruleset);
+  if (programs.programs.length) {
+    const eligible = new Set(programs.programs.flatMap(program => program.courses.map(course => course.id)));
+    plan = { ...plan, courses: (plan.courses || []).map(course =>
+      eligible.has(course.id) && !course.tag
+        ? { ...course, tag: 'tag.track' } : course) };
+  }
+  const credit = evaluateCredits(plan, ruleset, index, programs.programs);
+
+  if (programs.programs.length) {
+    subject.programRequired = true;
+    subject.programSatisfied = programs.recognized.length > 0;
+    subject.allSatisfied &&= subject.programSatisfied;
+    const track = credit.categories.find(category => category.id === 'cat.track');
+    const physics = credit.categories.flatMap(category => category.buckets).find(bucket => bucket.id === 'bkt.physics');
+    if (track) {
+      const bucket = track.buckets.find(bucket => bucket.id === 'bkt.track');
+      const complete = programs.programs.filter(program => program.complete);
+      const candidates = complete.map(program => {
+        const matchingIds = new Set(program.courses.map(course => course.id));
+        const scheduled = bucket.courses.filter(row => matchingIds.has(row.courseId)).reduce((sum, row) => sum + row.counted, 0);
+        const shared = physicsProgramCredits([program], physics?.courses || []);
+        return { credits: scheduled + shared, shared };
+      }).sort((a, b) => b.credits - a.credits || a.shared - b.shared);
+      const { credits: qualifyingCredits, shared } = candidates[0] || { credits: 0, shared: 0 };
+      bucket.sharedCredits = shared;
+      bucket.remaining = Math.max(0, bucket.target - qualifyingCredits);
+      bucket.met = bucket.remaining === 0 && programs.recognized.length > 0;
+      track.remaining = bucket.remaining;
+      track.met = bucket.met;
+      credit.total.met = credit.total.remaining === 0 && credit.categories.every(category => category.met);
+    }
+  }
+
+  if (plan.options?.englishRoute === 'advanced-german') {
+    const elective = credit.categories.flatMap(category => category.buckets).find(bucket => bucket.id === 'bkt.elective');
+    if (elective) {
+      const surplus = Math.max(0, credit.total.earned - (credit.total.target - 2),
+        credit.categories.reduce((sum, category) =>
+          sum + Math.max(0, category.earned - category.target), 0));
+      elective.englishSupplement = { target: 2, remaining: Math.max(0, 2 - surplus) };
+    }
+  }
+
   return {
     rulesetId: ruleset.id,
     rulesetLabel: ruleset.label,
-    subject: evaluateSubjects(plan, ruleset),
-    credit: evaluateCredits(plan, ruleset, index),
+    subject,
+    credit,
+    programs,
     issues,
   };
 }

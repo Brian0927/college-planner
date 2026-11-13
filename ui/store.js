@@ -20,10 +20,11 @@
 import { DEFAULT_MAJOR_ID, FIFTH_YEAR_TERMS, SEMESTERS, getModule } from '../rulesets/index.js';
 import { OFFERINGS } from '../offerings/index.js';
 import { normalizePlanCourse } from '../engine/plan-rules.js';
-import { mergeModules, customModule, applyTagEdits, termOf, findSection, sectionCandidates, cleanSlots, customSection, termHint, parsePrereq, checkPrereq, prereqTextFor } from '../engine/index.js';
+import { evaluate, mergeModules, customModule, applyTagEdits, termOf, findSection, sectionCandidates, cleanSlots, customSection, termHint, parsePrereq, checkPrereq, prereqTextFor } from '../engine/index.js';
 
 const STORAGE_KEY = 'credit-planner/plan/v2';
 const LEGACY_PLAN_KEYS = ['credit-planner/plan/v1'];
+const SCENARIOS_KEY = 'credit-planner/scenarios/v1';
 const PERSIST_KEY = 'credit-planner/persist';
 
 const PLAN_VERSION = 2;
@@ -42,7 +43,7 @@ function readPersistFlag() {
 /** 清掉存下來的規劃（不動開關本身的設定） */
 function clearStoredPlan() {
   try {
-    [STORAGE_KEY, ...LEGACY_PLAN_KEYS].forEach((k) => localStorage.removeItem(k));
+    [SCENARIOS_KEY, STORAGE_KEY, ...LEGACY_PLAN_KEYS].forEach((k) => localStorage.removeItem(k));
   } catch {
     /* 讀不到就算了 */
   }
@@ -57,29 +58,53 @@ function emptyPlan() {
     options: { englishRoute: 'advanced-german' },
     fifthYear: { enabled: false, terms: 'both' },
     courses: [],
+    exchangeSemesters: [],
+    approvedExchangeSemesters: [],
     lockedSemesters: [],    // 已鎖定、不接受編輯的學期 id，例：['y1s1']
     tagEdits: { tags: {}, moves: {}, custom: [] },
   };
 }
 
-let plan = load();
+const workspace = load();
+let plan = workspace.scenarios.find(scenario => scenario.id === workspace.activeId).plan;
+let uid = lastCourseId();
 if (persist) save();
-let uid = plan.courses.reduce((m, c) => Math.max(m, Number(String(c.id).slice(1)) || 0), 0);
+
+function lastCourseId() {
+  return plan.courses.reduce((max, course) => Math.max(max, Number(String(course.id).slice(1)) || 0), 0);
+}
+
+function activateScenario(id) {
+  const scenario = workspace.scenarios.find(scenario => scenario.id === id);
+  if (!scenario) return;
+  workspace.activeId = id;
+  plan = scenario.plan;
+  uid = lastCourseId();
+  commit();
+}
 const listeners = new Set();
 
 /* ── 讀寫 ────────────────────────────────── */
 function load() {
+  const single = plan => ({ activeId: 'original', scenarios: [{ id: 'original', name: '原始方案', plan }] });
   if (!persist) {
     // 沒開保存就順手清掉殘留資料，避免舊規劃陰魂不散
     clearStoredPlan();
-    return emptyPlan();
+    return single(emptyPlan());
+  }
+  try {
+    const saved = JSON.parse(localStorage.getItem(SCENARIOS_KEY));
+    if (saved?.scenarios?.length && saved.scenarios.some(scenario => scenario.id === saved.activeId)) {
+      return { ...saved, scenarios: saved.scenarios.map(scenario => ({ ...scenario, plan: migrate(scenario.plan) })) };
+    }
+  } catch {
+    // 可回讀舊版單一規劃。
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_PLAN_KEYS[0]);
-    if (!raw) return emptyPlan();
-    return migrate(JSON.parse(raw));
+    return single(raw ? migrate(JSON.parse(raw)) : emptyPlan());
   } catch {
-    return emptyPlan();
+    return single(emptyPlan());
   }
 }
 
@@ -110,6 +135,8 @@ function migrate(data) {
     }),
     // 舊版規劃檔沒有這個欄位，讀進來就是全部未鎖定
     lockedSemesters: [...(data.lockedSemesters || [])],
+    exchangeSemesters: [...(data.exchangeSemesters || [])],
+    approvedExchangeSemesters: [...(data.approvedExchangeSemesters || [])],
     tagEdits: { ...base.tagEdits, ...(data.tagEdits || {}) },
   };
 
@@ -148,7 +175,7 @@ function migrate(data) {
 function save() {
   if (!persist) return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
+    localStorage.setItem(SCENARIOS_KEY, JSON.stringify(workspace));
   } catch {
     /* 無痕模式或空間滿了：畫面照常運作，只是這次沒存起來 */
   }
@@ -162,7 +189,7 @@ function commit() {
 
 /** 這個學期是否已鎖定。semester 為 null（＝待排清單）時一律視為未鎖定 */
 function isLocked(semester) {
-  return Boolean(semester) && plan.lockedSemesters.includes(semester);
+  return Boolean(semester) && (plan.lockedSemesters.includes(semester) || plan.exchangeSemesters.includes(semester));
 }
 
 /** 規劃學期的先後順序：y1s1 → 3、y1s2 → 4、y2s1 → 5 …，數字越小越早 */
@@ -215,7 +242,7 @@ function settleSection(course) {
 }
 
 /** 目前生效的身分模組（主修排第一） */
-function activeModules() {
+function modulesFor(plan) {
   const mods = [getModule(plan.majorId)].filter(Boolean);
   plan.identityIds.forEach((id) => {
     const m = getModule(id);
@@ -227,7 +254,7 @@ function activeModules() {
 
 /** 目前身分組合（含使用者改過名、自己加的標籤）底下所有的標籤 */
 function currentTags() {
-  return applyTagEdits(mergeModules(activeModules()), plan.tagEdits).tags;
+  return applyTagEdits(mergeModules(modulesFor(plan)), plan.tagEdits).tags;
 }
 
 /** 主修指定的備用標籤（例：動機系的「主修選修」）；主修沒指定時回傳 null */
@@ -250,15 +277,44 @@ function retagOrphans() {
 
 /* ── 對外 ────────────────────────────────── */
 export const store = {
+  get activeScenarioId() {
+    return workspace.activeId;
+  },
+  get scenarios() {
+    return workspace.scenarios.map(({ id, name }) => ({ id, name }));
+  },
+  get scenarioSummaries() {
+    return workspace.scenarios.map(({ name, plan }) => {
+      const modules = modulesFor(plan);
+      const report = evaluate(plan, mergeModules(modules));
+      return {
+        name,
+        minor: modules.slice(1).map(module => module.label).join('、'),
+        earned: report.credit.total.earned,
+        target: report.credit.total.target,
+        programs: report.programs.programs.filter(program => report.programs.recognized.includes(program.id)).map(program => program.label).join('、'),
+        exchange: SEMESTERS.filter(sem => plan.exchangeSemesters.includes(sem.id)).map(sem => sem.year + sem.term).join('、'),
+      };
+    });
+  },
+  addScenario(name, copyCurrent) {
+    const label = name.trim();
+    if (!label) return false;
+    const id = globalThis.crypto.randomUUID();
+    workspace.scenarios.push({ id, name: label, plan: copyCurrent ? structuredClone(plan) : emptyPlan() });
+    activateScenario(id);
+    return true;
+  },
+  selectScenario: activateScenario,
   get plan() {
     return plan;
   },
   /** 合併所有身分模組後的規則集，引擎吃這個 */
   get ruleset() {
-    return mergeModules(activeModules());
+    return mergeModules(modulesFor(plan));
   },
   get modules() {
-    return activeModules();
+    return modulesFor(plan);
   },
   /** 換主修或取消身分時，標籤對不上的課會改掛的標籤 { id, label, … }；沒有時為 null */
   get fallbackTag() {
@@ -480,8 +536,33 @@ export const store = {
 
   /* 學期鎖定：鎖住的學期不接受搬入、搬出，裡面的課也不能改標籤或備註 */
   isSemesterLocked: isLocked,
+  isExchangeSemester(semester) {
+    return plan.exchangeSemesters.includes(semester);
+  },
+  toggleExchangeSemester(semester) {
+    if (!SEMESTERS.some(({ id }) => id === semester)) return;
+    const index = plan.exchangeSemesters.indexOf(semester);
+    if (index >= 0) {
+      plan.exchangeSemesters.splice(index, 1);
+      plan.approvedExchangeSemesters = plan.approvedExchangeSemesters.filter(id => id !== semester);
+    }
+    else {
+      plan.exchangeSemesters.push(semester);
+    }
+    commit();
+  },
+  isExchangeApproved(semester) {
+    return plan.approvedExchangeSemesters.includes(semester);
+  },
+  toggleExchangeApproval(semester) {
+    if (!this.isExchangeSemester(semester)) return;
+    plan.approvedExchangeSemesters = this.isExchangeApproved(semester)
+      ? plan.approvedExchangeSemesters.filter(id => id !== semester)
+      : [...plan.approvedExchangeSemesters, semester];
+    commit();
+  },
   toggleSemesterLock(semester) {
-    if (!semester) return false;
+    if (!semester || this.isExchangeSemester(semester)) return false;
     const next = !isLocked(semester);
     plan.lockedSemesters = next
       ? [...plan.lockedSemesters, semester]
@@ -523,11 +604,13 @@ export const store = {
     const data = typeof json === 'string' ? JSON.parse(json) : json;
     if (!data || !Array.isArray(data.courses)) throw new Error('這個檔案裡沒有課程資料');
     plan = migrate(data);
-    uid = plan.courses.reduce((m, c) => Math.max(m, Number(String(c.id).slice(1)) || 0), 0);
+    workspace.scenarios.find(scenario => scenario.id === workspace.activeId).plan = plan;
+    uid = lastCourseId();
     commit();
   },
   reset() {
     plan = emptyPlan();
+    workspace.scenarios.find(scenario => scenario.id === workspace.activeId).plan = plan;
     uid = 0;
     commit();
   },

@@ -7,14 +7,14 @@
  */
 
 /** 版本標記：畫面右下角會顯示，用來確認瀏覽器跑的是不是最新檔案 */
-export const BUILD = 'v30';
+export const BUILD = 'v31';
 
 import { evaluate } from '../engine/index.js';
 import { store } from './store.js';
 import { FIFTH_YEAR_TERMS } from '../rulesets/index.js';
-import { $, num, toast } from './dom.js';
+import { $, esc, num, toast } from './dom.js';
 import { renderSetup } from './views/setup.js';
-import { renderPool } from './views/pool.js';
+import { clearSelection, renderPool } from './views/pool.js';
 import { renderGrid } from './views/grid.js';
 import { renderWeek } from './views/week.js';
 import { renderReport } from './views/report.js';
@@ -24,7 +24,8 @@ import { openHelp, maybeAutoShowHelp } from './views/help.js';
 function renderAll() {
   const report = evaluate(store.plan, store.ruleset);
   renderHeader(report);
-  renderSetup();
+  renderSetup(report.programs);
+  renderScenarioPicker();
   renderPool();
   renderFifthYearSettings();
   renderGrid();
@@ -54,18 +55,9 @@ function renderFifthYearSettings() {
 }
 
 function renderHeader(report) {
-  const { plan, ruleset } = store;
   const t = report.credit.total;
 
-  const parts = [];
-  parts.push(ruleset.label);
-  (ruleset.options || []).forEach((opt) => {
-    const v = plan.options[opt.id];
-    if (!v) return;
-    const ch = opt.choices.find((c) => c.value === v);
-    if (ch) parts.push(ch.label);
-  });
-  setText('#majorSub', parts.join('　｜　'));
+  setText('#majorSub', store.modules.map(module => module.label).join('　｜　'));
 
   const toggle = $('#persistToggle');
   if (toggle) toggle.checked = store.persistEnabled;
@@ -85,28 +77,46 @@ function renderHeader(report) {
   if (ring) ring.style.strokeDashoffset = String(201 - 201 * pct);
 }
 
-/* ── 檔案 ─────────────────────────────────── */
-function exportPlan() {
-  const blob = new Blob([store.exportPlan()], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `學程規劃_${new Date().toISOString().slice(0, 10)}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  toast('規劃已下載');
+/* ── 方案 ────────────────────────────────── */
+function renderScenarioPicker() {
+  const picker = $('#scenarioPick');
+  picker.replaceChildren(...store.scenarios.map(({ id, name }) => new window.Option(name, id)));
+  picker.value = store.activeScenarioId;
 }
 
-function importPlan(file) {
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      store.importPlan(reader.result);
-      toast('規劃已匯入');
-    } catch (err) {
-      toast('讀不到規劃資料：' + err.message);
-    }
-  };
-  reader.readAsText(file);
+function openScenarioDialog(compare) {
+  const dialog = $('#scenarioDialog');
+  const scenarios = compare ? store.scenarioSummaries : [];
+  dialog.innerHTML = `
+    <form method="dialog" class="dialog-head">
+      <h2 id="scenarioTitle">${compare ? '比較方案' : '新增方案'}</h2>
+      <button class="btn-ghost" type="submit">關閉</button>
+    </form>
+    ${compare ? `<div class="scenario-table"><table><thead><tr>
+      <th>方案</th><th>輔系</th><th>已排學分</th><th>達標學程</th><th>交換學期</th>
+      </tr></thead><tbody>${scenarios.map(scenario => `<tr>
+      <th scope="row">${esc(scenario.name)}</th><td>${esc(scenario.minor || '—')}</td>
+      <td>${num(scenario.earned)} / ${num(scenario.target)}</td><td>${esc(scenario.programs || '—')}</td>
+      <td>${esc(scenario.exchange || '—')}</td></tr>`).join('')}</tbody></table></div>` : `
+      <form id="scenarioForm">
+        <label for="scenarioName">方案名稱</label>
+        <input id="scenarioName" name="name" maxlength="60" required>
+        <label for="scenarioSource">起始內容</label>
+        <select id="scenarioSource" name="source">
+          <option value="blank">空白方案</option><option value="copy">複製目前方案</option>
+        </select>
+        <button class="btn-primary" type="submit">新增方案</button>
+      </form>`}
+  `;
+  dialog.querySelector('#scenarioForm')?.addEventListener('submit', event => {
+    event.preventDefault();
+    const { name, source } = event.currentTarget.elements;
+    if (!name.value.trim()) return toast('請輸入方案名稱');
+    clearSelection();
+    store.addScenario(name.value, source.value === 'copy');
+    dialog.close();
+  });
+  dialog.showModal();
 }
 
 /* ── 啟動 ─────────────────────────────────── */
@@ -129,12 +139,12 @@ function on(selector, event, handler) {
   el.addEventListener(event, handler);
 }
 
-on('#exportBtn', 'click', exportPlan);
-on('#importBtn', 'click', () => $('#importFile')?.click());
-on('#importFile', 'change', (e) => {
-  if (e.target.files[0]) importPlan(e.target.files[0]);
-  e.target.value = '';
+on('#scenarioPick', 'change', event => {
+  clearSelection();
+  store.selectScenario(event.target.value);
 });
+on('#scenarioAdd', 'click', () => openScenarioDialog(false));
+on('#scenarioCompare', 'click', () => openScenarioDialog(true));
 const fifthYearTerms = $('#fifthYearTerms');
 if (fifthYearTerms) {
   FIFTH_YEAR_TERMS.forEach(({ value, label }) => fifthYearTerms.add(new window.Option(label, value)));
@@ -153,7 +163,8 @@ on('#persistToggle', 'change', (e) => {
 on('#tagEditorBtn', 'click', openTagEditor);
 on('#helpBtn', 'click', openHelp);
 on('#resetBtn', 'click', () => {
-  if (confirm('會清空所有課程與設定，且無法復原。建議先匯出備份。確定清空？')) {
+  if (confirm('確定清空目前方案的所有課程與設定？')) {
+    clearSelection();
     store.reset();
     toast('已清空');
   }

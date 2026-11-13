@@ -54,9 +54,12 @@ export function renderReport(report) {
 function subjectHTML(s) {
   const banner = s.allSatisfied
     ? '<div class="notice pass"><b>規定科目全部排定。</b></div>'
-    : `<div class="notice">還有 <b>${s.totals.required - s.totals.checked}</b> 門規定科目沒排進課表。已排 ${s.totals.checked}／${s.totals.required} 門。</div>`;
+    : `<div class="notice">還有 <b>${s.totals.required - s.totals.checked}</b> 門校定、系定或輔系科目待排。已排 ${s.totals.checked}／${s.totals.required} 門。</div>`;
 
-  return banner + s.groups.map(groupHTML).join('');
+  const program = s.programRequired
+    ? '<div class="check-line' + (s.programSatisfied ? '' : ' bad') + '">' + (s.programSatisfied ? '✓ 已符合至少一個專業學程的科目要求' : '○ 尚須完成至少一個專業學程') + '</div>'
+    : '';
+  return banner + program + s.groups.map(groupHTML).join('');
 }
 
 function groupHTML(g) {
@@ -156,7 +159,7 @@ function bucketHTML(b) {
   if (!b.active) {
     return `<div class="bkt-row off"><span class="bk-name">${esc(b.label)}<span class="bk-note">目前身分未啟用</span></span></div>`;
   }
-  const pct = b.target ? Math.min(1, b.earned / b.target) : b.earned > 0 ? 1 : 0;
+  const pct = b.target ? Math.min(1, (b.earned + (b.sharedCredits || 0)) / b.target) : b.earned > 0 ? 1 : 0;
 
   const checks = b.checks
     .map(
@@ -173,7 +176,7 @@ function bucketHTML(b) {
         ${b.courses
           .map(
             (r) => `<div class="cd-row">
-              <span>${esc(r.name)}${r.viaOverflow ? '<span class="cd-flag">溢出</span>' : ''}</span>
+              <span>${esc(r.name)}${r.viaOverflow ? '<span class="cd-flag">轉入</span>' : ''}</span>
               <span class="cd-num">${num(r.counted)}</span>
             </div>`
           )
@@ -187,9 +190,11 @@ function bucketHTML(b) {
     b.note ? `<span class="bk-note">${esc(b.note)}</span>` : ''
   }</span>
       <span class="bar"><span class="${pct >= 1 ? 'full' : ''}" style="width:${pct * 100}%"></span></span>
-      <span class="bk-num">${num(b.earned)} / ${b.target == null ? '—' : num(b.target)}</span>
+      <span class="bk-num">${num(b.earned + (b.sharedCredits || 0))} / ${b.target == null ? '—' : num(b.target)}</span>
     </div>
     ${b.replacement ? `<div class="check-line${b.replacement.completed ? '' : ' bad'}" data-english-replacement>${b.replacement.completed ? '✓ 英文學分已透過外語修完（依排課判定）' : '○ 外語替代英文尚未完成：需初級德語一、二各 3 學分'}<span class="bk-note">須確認兩門課均及格；大四畢業審查表英文欄旁註記「以其它外語方案修課」，以便系辦及註冊組審查。</span></div>` : ''}
+    ${b.sharedCredits ? '<div class="check-line">物理五選二雙重認證 ' + num(b.sharedCredits) + ' 學分，畢業總學分只計一次。</div>' : ''}
+    ${b.englishSupplement ? '<div class="check-line" data-english-supplement>德語方案：另補畢業總學分 2 學分，目前待補 ' + num(b.englishSupplement.remaining) + ' 學分。可用任何可認列課程補足。</div>' : ''}
     ${checks}${detail}`;
 }
 

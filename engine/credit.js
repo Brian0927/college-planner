@@ -9,14 +9,15 @@
  * 要讓它算進專業學程，就把標籤改成「專業學程」——但那樣物理領域就沒有了。
  *
  * 額滿時（例：物理領域上限 6 學分）超出的課會**整門**轉到 overflowTo 指定的項目，
- * 不會把一門課的學分拆成兩半分給兩個領域。
+ * 其餘選修可承接已達標項目的剩餘學分，各學分在總計只計一次。
  */
 
 import { isActive, isCounted, toNumber, normalizeName } from './ruleset.js';
+import { physicsProgramCredits } from './programs.js';
 
 const MAX_PASSES = 8; // 溢出鏈的保險絲，避免規則寫成循環時無限迴圈
 
-export function evaluateCredits(plan, ruleset, index) {
+export function evaluateCredits(plan, ruleset, index, programs = []) {
   const options = plan.options || {};
   const courses = (plan.courses || []).filter(isCounted);
 
@@ -60,6 +61,7 @@ export function evaluateCredits(plan, ruleset, index) {
   /* ---------- 2. 依上限認列，溢出者轉投下一個項目 ---------- */
   const earned = new Map(index.bucketOrder.map((id) => [id, 0]));
   const takenBy = new Map(index.bucketOrder.map((id) => [id, []]));
+  let geArtsCredits = 0;
   const dropped = []; // 額滿又沒有溢出目標，這些學分不計入任何項目
 
   for (let pass = 0; pass < MAX_PASSES; pass++) {
@@ -75,6 +77,14 @@ export function evaluateCredits(plan, ruleset, index) {
       const cap = bucket.cap == null ? Infinity : toNumber(bucket.cap);
 
       for (const item of items) {
+        if (bucketId === 'bkt.ge' && item.course.tag === 'tag.ge-arts-practice') {
+          const counted = Math.min(item.credit, Math.max(0, 2 - geArtsCredits));
+          const excess = item.credit - counted;
+          if (excess > 0) inbox.get('bkt.elective')?.push({ ...item, credit: excess, from: bucketId });
+          geArtsCredits += counted;
+          item.credit = counted;
+          if (counted === 0) continue;
+        }
         const space = cap - earned.get(bucketId);
 
         // 一門課的學分只會落在一個領域，放不下就整門轉走，不切分。
@@ -112,6 +122,58 @@ export function evaluateCredits(plan, ruleset, index) {
     if (!moved) break;
   }
 
+  // 用已滿額的主修項目之剩餘學分補其餘選修，原項目仍保有足額的學分及必要門數。
+  const electiveId = 'bkt.elective';
+  let electiveShortfall = Math.max(0, (index.bucketById.get(electiveId)?.minCredits || 0) - (earned.get(electiveId) || 0));
+  const protectedTrackCredits = new Map();
+  const protectedPhysics = new Set();
+  for (const program of programs.filter(program => program.complete)) {
+    const physicsRows = takenBy.get('bkt.physics') || [];
+    let reserve = Math.max(0, 15 - physicsProgramCredits([program], physicsRows));
+    const ids = new Set(program.courses.map(course => course.id));
+    const rows = (takenBy.get('bkt.track') || []).filter(row => ids.has(row.courseId));
+    if (rows.reduce((sum, row) => sum + row.counted, 0) < reserve) continue;
+    for (const row of rows) {
+      const reserved = Math.min(reserve, row.counted);
+      protectedTrackCredits.set(row.courseId, reserved);
+      reserve -= reserved;
+    }
+    physicsRows.filter(row => physicsProgramCredits([program], [row]) > 0).forEach(row => protectedPhysics.add(row.courseId));
+    break;
+  }
+
+  for (const category of ruleset.categories) {
+    if (!electiveShortfall || !['cat.school', 'cat.dept', 'cat.track'].includes(category.id)) continue;
+    if (category.id === 'cat.track' && !protectedTrackCredits.size) continue;
+    const categoryEarned = category.buckets.reduce((sum, bucket) => sum + earned.get(bucket.id), 0);
+    let categorySurplus = Math.max(0, categoryEarned - (category.minCredits || 0));
+    for (const bucket of category.buckets) {
+      if (!electiveShortfall || !categorySurplus) continue;
+      const rows = takenBy.get(bucket.id);
+      let surplus = Math.max(0, earned.get(bucket.id) - (bucket.minCredits || 0));
+      const requiredRows = bucket.id === 'bkt.ge'
+        ? new Set((bucket.checks?.[0]?.tags || []).map(tag => rows.find(row => row.tag === tag)?.courseId))
+        : new Set(bucket.id === 'bkt.physics' ? [...protectedPhysics, ...rows.slice(0, 2).map(row => row.courseId)] : []);
+      for (const row of [...rows].reverse()) {
+        const movable = row.counted - (protectedTrackCredits.get(row.courseId) || 0);
+        const moved = Math.min(movable, surplus, categorySurplus, electiveShortfall);
+        if (!moved || requiredRows.has(row.courseId)) continue;
+        row.counted -= moved;
+        takenBy.get(electiveId).push({ ...row, counted: moved, viaOverflow: true, from: bucket.id });
+        const allocations = allocationsOf.get(row.courseId);
+        const original = allocations.find(allocation => allocation.bucketId === bucket.id);
+        original.credit -= moved;
+        if (!original.credit) allocations.splice(allocations.indexOf(original), 1);
+        allocations.push({ bucketId: electiveId, credit: moved, viaOverflow: true, from: bucket.id });
+        earned.set(bucket.id, earned.get(bucket.id) - moved);
+        earned.set(electiveId, earned.get(electiveId) + moved);
+        surplus -= moved;
+        categorySurplus -= moved;
+        electiveShortfall -= moved;
+      }
+    }
+  }
+
   /* ---------- 3. 組出五大類的成績單 ---------- */
   const categories = ruleset.categories.map((cat) => {
     const catActive = isActive(cat, options);
@@ -120,7 +182,7 @@ export function evaluateCredits(plan, ruleset, index) {
       const meta = index.bucketById.get(b.id);
       const got = earned.get(b.id) || 0;
       const target = b.minCredits == null ? null : toNumber(b.minCredits);
-      const rows = takenBy.get(b.id) || [];
+      const rows = (takenBy.get(b.id) || []).filter(row => row.counted > 0 || row.credit === 0);
       const checks = runBucketChecks(b, rows, courses);
       const replacement = b.replacement ? {
         label: b.replacement.label,
