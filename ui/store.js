@@ -20,6 +20,7 @@
 import { DEFAULT_MAJOR_ID, FIFTH_YEAR_TERMS, SEMESTERS, getModule } from '../rulesets/index.js';
 import { OFFERINGS } from '../offerings/index.js';
 import { normalizePlanCourse } from '../engine/plan-rules.js';
+import { migrateProgramTags } from '../engine/programs.js';
 import { evaluate, mergeModules, customModule, applyTagEdits, termOf, findSection, sectionCandidates, cleanSlots, customSection, termHint, parsePrereq, checkPrereq, prereqTextFor } from '../engine/index.js';
 
 const STORAGE_KEY = 'credit-planner/plan/v2';
@@ -169,6 +170,7 @@ function migrate(data) {
   delete out.options.minor;
   delete out.rulesetId;
   out.courses.forEach(c => normalizePlanCourse(c, out.options));
+  migrateProgramTags(out.courses, getModule(out.majorId));
   return out;
 }
 

@@ -12,6 +12,25 @@ function matches(item, course) {
     normalizeName(name) === normalizeName(course.name));
 }
 
+/** Convert the legacy generic label while leaving existing specific labels alone. */
+export function migrateProgramTags(courses, ruleset) {
+  const programs = programGroups(ruleset).filter(group =>
+    ['tag.track-control', 'tag.track-nano'].includes(group.defaultTag));
+
+  for (const course of courses) {
+    if (course.tag !== 'tag.track') continue;
+    const core = programs.find(group => group.groups[0].items.some(item => matches(item, course)));
+    if (core) {
+      course.tag = core.defaultTag;
+      continue;
+    }
+    const electives = programs.filter(group => group.groups[1].items.some(item => matches(item, course)));
+    // The shared sensing and actuation elective is filed under nano by default.
+    const program = electives.find(group => group.defaultTag === 'tag.track-nano') || electives[0];
+    if (program) course.tag = program.defaultTag;
+  }
+}
+
 export function evaluatePrograms(plan, ruleset) {
   const courses = (plan.courses || []).filter(course => isCounted(course) && toNumber(course.credit) > 0);
   const programs = programGroups(ruleset).map(group => {
